@@ -15,23 +15,24 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
   final _service = MaterialService();
 
   late TextEditingController _nomeCtrl;
-  late TextEditingController _unidadeCtrl;
-  late TextEditingController _precoRefCtrl;
+  late TextEditingController _precoCompraCtrl;
+  late TextEditingController _precoVendaCtrl;
 
   @override
   void initState() {
     super.initState();
     _nomeCtrl = TextEditingController(text: widget.item?.nome ?? "");
-    _unidadeCtrl = TextEditingController(text: widget.item?.unidade ?? "");
-    _precoRefCtrl = TextEditingController(
-        text: widget.item?.precoRef.toString() ?? "");
+    _precoCompraCtrl =
+        TextEditingController(text: widget.item?.precoCompra.toString() ?? "");
+    _precoVendaCtrl =
+        TextEditingController(text: widget.item?.precoVenda.toString() ?? "");
   }
 
   @override
   void dispose() {
     _nomeCtrl.dispose();
-    _unidadeCtrl.dispose();
-    _precoRefCtrl.dispose();
+    _precoCompraCtrl.dispose();
+    _precoVendaCtrl.dispose();
     super.dispose();
   }
 
@@ -41,8 +42,10 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
     final item = MaterialItem(
       id: widget.item?.id,
       nome: _nomeCtrl.text.trim(),
-      unidade: _unidadeCtrl.text.trim(),
-      precoRef: double.tryParse(_precoRefCtrl.text) ?? 0,
+      precoCompra:
+          double.tryParse(_precoCompraCtrl.text.replaceAll(',', '.')) ?? 0,
+      precoVenda:
+          double.tryParse(_precoVendaCtrl.text.replaceAll(',', '.')) ?? 0,
     );
 
     if (widget.item == null) {
@@ -57,37 +60,74 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
   @override
   Widget build(BuildContext context) {
     final editando = widget.item != null;
+    final bg = Colors.green.shade300;
+
+    InputDecoration inputDecoration() => InputDecoration(
+          filled: true,
+          fillColor: Colors.green.shade50,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.black54),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.black, width: 1.2),
+          ),
+        );
+
+    Widget label(String text) => Text(text,
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500));
+
     return Scaffold(
-      appBar: AppBar(title: Text(editando ? "Editar Material" : "Novo Material")),
+      backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: bg,
+        foregroundColor: Colors.black,
+        title: Text(editando ? 'Editar Material' : 'Novo Material'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
+              label('Nome'),
+              const SizedBox(height: 6),
               TextFormField(
                 controller: _nomeCtrl,
-                decoration: const InputDecoration(labelText: "Nome"),
-                validator: (v) => v == null || v.isEmpty ? "Digite o nome" : null,
+                style: const TextStyle(color: Colors.black),
+                decoration: inputDecoration(),
+                validator: (v) => v == null || v.isEmpty ? 'Digite o nome' : null,
               ),
               const SizedBox(height: 12),
+              label('Preço de Compra'),
+              const SizedBox(height: 6),
               TextFormField(
-                controller: _unidadeCtrl,
-                decoration: const InputDecoration(labelText: "Unidade (ex: kg, un)"),
-                validator: (v) => v == null || v.isEmpty ? "Digite a unidade" : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _precoRefCtrl,
+                controller: _precoCompraCtrl,
+                style: const TextStyle(color: Colors.black),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: "Preço de Referência"),
+                decoration: inputDecoration(),
+              ),
+              const SizedBox(height: 12),
+              label('Preço de Venda'),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _precoVendaCtrl,
+                style: const TextStyle(color: Colors.black),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: inputDecoration(),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: _salvar,
                 icon: const Icon(Icons.save),
-                label: Text(editando ? "Salvar alterações" : "Cadastrar"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade50,
+                  foregroundColor: Colors.black,
+                ),
+                label: Text(editando ? 'Salvar alterações' : 'Cadastrar'),
               )
             ],
           ),
@@ -96,3 +136,4 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
     );
   }
 }
+

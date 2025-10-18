@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.0+1  # ← REMOVA OS DOIS PONTOS NO FINAL
+version: 1.1.0+2
 
 environment:
   sdk: ^3.8.1
@@ -17,6 +17,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_localizations: 
     sdk: flutter
+  mask_text_input_formatter: ^2.9.0
+  google_fonts: ^6.3.2
+  sliding_up_panel: ^2.0.0+1
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +29,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
