@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gaudioso_app/screens/login/login_screen.dart';
+import 'package:gaudioso_app/services/auth_service.dart';
 import 'materiais_screen.dart';
 import 'cadastros_screen.dart';
 import 'entradas_screen.dart';
@@ -7,7 +9,12 @@ import 'estoque_screen.dart';
 import 'relatorios_screen.dart';
 
 class MenuScreen extends StatelessWidget {
-  const MenuScreen({super.key});
+  final String userEmail;
+
+  const MenuScreen({
+    super.key,
+    required this.userEmail,
+  });
 
   Widget _buildMenuCard({
     required IconData icon,
@@ -26,7 +33,7 @@ class MenuScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: Colors.green.shade800),
+              Icon(icon, size: 40, color: Colors.black),
               const SizedBox(height: 10),
               Text(
                 label,
@@ -34,6 +41,7 @@ class MenuScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -48,7 +56,7 @@ class MenuScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.green.shade400,
       appBar: AppBar(
-        title: const Text("Gaudioso Reciclagens"),
+        title: const Text('Gaudioso Reciclagens'),
         centerTitle: true,
         backgroundColor: Colors.green.shade800,
       ),
@@ -56,29 +64,32 @@ class MenuScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const UserAccountsDrawerHeader(
-              accountName: Text("Vitor"),
-              accountEmail: Text("vitor@gaudioso.com"),
-              currentAccountPicture: CircleAvatar(
+            UserAccountsDrawerHeader(
+              accountName: const Text('usuário'),
+              accountEmail: Text(userEmail),
+              currentAccountPicture: const CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(Icons.person, size: 40, color: Colors.green),
               ),
-              decoration: BoxDecoration(color: Colors.green),
+              decoration: const BoxDecoration(color: Colors.green),
             ),
             ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text("Perfil"),
+              leading: const Icon(Icons.person, color: Colors.black),
+              title: const Text('Perfil', style: TextStyle(color: Colors.black)),
               onTap: () {
                 Navigator.pop(context);
-                // implementar tela de perfil futuramente
               },
             ),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Sair"),
+              leading: const Icon(Icons.logout, color: Colors.black),
+              title: const Text('Sair', style: TextStyle(color: Colors.black)),
               onTap: () {
-                Navigator.pop(context);
-                // implementar logout futuramente
+                AuthService().logout();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (Route<dynamic> route) => false,
+                );
               },
             ),
           ],
@@ -88,7 +99,7 @@ class MenuScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
           const Text(
-            "Painel de Controle",
+            'Painel de Controle',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -105,7 +116,7 @@ class MenuScreen extends StatelessWidget {
               children: [
                 _buildMenuCard(
                   icon: Icons.inventory,
-                  label: "Cadastrar\nMateriais",
+                  label: 'Cadastrar\nMateriais',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -117,7 +128,7 @@ class MenuScreen extends StatelessWidget {
                 ),
                 _buildMenuCard(
                   icon: Icons.people,
-                  label: "Cadastros",
+                  label: 'Gerenciar\nParceiros',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -129,7 +140,7 @@ class MenuScreen extends StatelessWidget {
                 ),
                 _buildMenuCard(
                   icon: Icons.arrow_downward,
-                  label: "Registrar\nEntrada",
+                  label: 'Registrar\nEntrada',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -141,7 +152,7 @@ class MenuScreen extends StatelessWidget {
                 ),
                 _buildMenuCard(
                   icon: Icons.arrow_upward,
-                  label: "Registrar\nSaída",
+                  label: 'Registrar\nSaída',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -153,7 +164,7 @@ class MenuScreen extends StatelessWidget {
                 ),
                 _buildMenuCard(
                   icon: Icons.search,
-                  label: "Consultar\nEstoque",
+                  label: 'Consultar\nEstoque',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -165,7 +176,7 @@ class MenuScreen extends StatelessWidget {
                 ),
                 _buildMenuCard(
                   icon: Icons.bar_chart,
-                  label: "Relatórios",
+                  label: 'Relatórios',
                   onTap: () {
                     Navigator.push(
                       context,
@@ -181,7 +192,7 @@ class MenuScreen extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.all(8.0),
             child: Text(
-              "© 2025 Gaudioso Reciclagens",
+              '© 2025 Gaudioso Reciclagens',
               style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ),
