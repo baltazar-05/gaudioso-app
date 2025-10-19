@@ -152,10 +152,10 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                       onPressed: () async {
                                         try {
                                           await service.excluir(c.id!);
-                                          if (!mounted) return;
+                                          if (!context.mounted) return;
                                           carregar();
                                         } catch (e) {
-                                          if (!mounted) return;
+                                          if (!context.mounted) return;
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(content: Text('Erro ao excluir: $e')));
                                         }
