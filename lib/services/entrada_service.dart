@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:gaudioso_app/core/api_config.dart';
 import '../models/entrada.dart';
 
 class EntradaService {
-  static const baseUrl = "http://10.0.2.2:8080/api/entradas";
+  static final baseUrl = ApiConfig.endpoint('/api/entradas');
+  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
 
   Future<List<Entrada>> listar() async {
     final res = await http.get(Uri.parse(baseUrl));

@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:gaudioso_app/core/api_config.dart';
 import '../models/saida.dart';
 
 class SaidaService {
-  static const baseUrl = "http://10.0.2.2:8080/api/saidas";
+  static final baseUrl = ApiConfig.endpoint('/api/saidas');
+  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
   // em celular físico: troque pelo IP da sua máquina
 
   Future<List<Saida>> listar() async {

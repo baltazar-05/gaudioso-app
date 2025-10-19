@@ -1,21 +1,21 @@
-// lib/services/api_service.dart
+﻿// lib/services/api_service.dart
 //
-// Serviço HTTP base: centraliza baseUrl, headers e chamadas GET/POST/PUT/DELETE.
-// Requer o pacote http no pubspec.yaml: http: ^0.13.6 (ou 1.x se já estiver usando)
+// HTTP helper that centralizes base URL, headers, and JSON helpers.
 
 import 'dart:convert';
+
+import 'package:gaudioso_app/core/api_config.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // 👉 Ajuste para o endereço da sua API (ex.: emulador Android usa 10.0.2.2)
-  static const String baseUrl = 'http://10.0.2.2:8080';
+  // Reads API_BASE from --dart-define; defaults to http://10.0.2.2:8080 for Android emulators.
+  static final String baseUrl = ApiConfig.baseUrl;
 
-  // Se tiver autenticação com token, injete aqui
   static Map<String, String> _headers({Map<String, String>? extra}) {
     final base = <String, String>{
       'Content-Type': 'application/json; charset=utf-8',
       'Accept': 'application/json',
-      // 'Authorization': 'Bearer SEU_TOKEN', // se/quando tiver
+      // 'Authorization': 'Bearer <token>', // plug auth here when needed
     };
     if (extra != null) base.addAll(extra);
     return base;

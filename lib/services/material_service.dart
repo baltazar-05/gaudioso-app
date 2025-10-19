@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:gaudioso_app/core/api_config.dart';
 import '../models/material.dart';
 
 class MaterialService {
-  static const baseUrl = "http://10.0.2.2:8080/api/materiais";
+  static final baseUrl = ApiConfig.endpoint('/api/materiais');
+  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
   // 👉 se rodar no celular físico, troque para seu IP local (ex: http://192.168.0.10:8080/api/materiais)
 
   Future<List<MaterialItem>> listar() async {

@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:gaudioso_app/core/api_config.dart';
 import '../models/fornecedor.dart';
 
 class FornecedorService {
-  static const baseUrl = "http://10.0.2.2:8080/api/fornecedores";
+  static final baseUrl = ApiConfig.endpoint('/api/fornecedores');
+  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
   // se for em celular físico, use o IP local ex: http://192.168.0.10:8080/api/fornecedores
 
   Future<List<Fornecedor>> listar() async {

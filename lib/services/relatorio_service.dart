@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
+import 'package:gaudioso_app/core/api_config.dart';
 import '../models/relatorio.dart';
 
 class RelatorioService {
-  static const baseUrl = "http://10.0.2.2:8080/api/relatorios";
+  static final baseUrl = ApiConfig.endpoint('/api/relatorios');
+  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
   // 👉 em celular físico, use o IP da máquina
 
   Future<List<Relatorio>> gerar(String dataInicio, String dataFim) async {
