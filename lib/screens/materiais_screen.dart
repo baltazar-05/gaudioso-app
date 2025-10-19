@@ -38,6 +38,7 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
       context,
       MaterialPageRoute(builder: (_) => MaterialFormScreen(item: item)),
     );
+    if (!mounted) return;
     if (mudou == true) carregar();
   }
 
@@ -120,7 +121,7 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Compra: R\$ ${m.precoCompra.toStringAsFixed(2)} | Venda: R\$ ${m.precoVenda.toStringAsFixed(2)}',
-                                style: TextStyle(color: accent.withOpacity(0.9)),
+                                style: TextStyle(color: accent.withValues(alpha: 0.9)),
                               ),
                             ],
                           ),
@@ -136,6 +137,7 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
                               icon: Icon(Icons.delete, color: accent),
                               onPressed: () async {
                                 await service.excluir(m.id!);
+                                if (!context.mounted) return;
                                 carregar();
                               },
                             ),

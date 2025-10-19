@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' show log;
 import 'package:http/http.dart' as http;
 
 import 'package:gaudioso_app/core/api_config.dart';
@@ -11,7 +12,7 @@ class ClienteService {
 
   Future<List<Cliente>> listar() async {
     final res = await http.get(Uri.parse(baseUrl));
-    print("Resposta clientes: ${res.statusCode} - ${res.body}"); // debug
+    log("Resposta clientes: ${res.statusCode} - ${res.body}"); // debug
 
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body) as List;
@@ -26,7 +27,7 @@ class ClienteService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(c.toJson()),
     );
-    print("Adicionar cliente: ${res.statusCode} - ${res.body}"); // debug
+    log("Adicionar cliente: ${res.statusCode} - ${res.body}"); // debug
 
     if (res.statusCode != 201 && res.statusCode != 200) {
       throw Exception("Erro ao adicionar cliente");
@@ -39,7 +40,7 @@ class ClienteService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(c.toJson()),
     );
-    print("Atualizar cliente: ${res.statusCode} - ${res.body}"); // debug
+    log("Atualizar cliente: ${res.statusCode} - ${res.body}"); // debug
 
     if (res.statusCode != 200) {
       throw Exception("Erro ao atualizar cliente");
@@ -48,7 +49,7 @@ class ClienteService {
 
   Future<void> excluir(int id) async {
     final res = await http.delete(Uri.parse("$baseUrl/$id"));
-    print("Excluir cliente: ${res.statusCode}"); // debug
+    log("Excluir cliente: ${res.statusCode}"); // debug
 
     if (res.statusCode != 204 && res.statusCode != 200) {
       throw Exception("Erro ao excluir cliente");

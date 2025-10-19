@@ -60,6 +60,7 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao salvar saída: $e")),
       );

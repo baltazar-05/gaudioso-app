@@ -64,6 +64,7 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       }
       if (mounted) Navigator.pop(context, true);
     } catch (err) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao salvar entrada: $err")),
       );

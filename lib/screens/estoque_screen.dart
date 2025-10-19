@@ -23,11 +23,13 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
   Future<void> carregar() async {
     try {
       final data = await service.listar();
+      if (!mounted) return;
       setState(() {
         itens = data;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao carregar estoque: $e")),

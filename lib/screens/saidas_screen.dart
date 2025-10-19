@@ -24,11 +24,13 @@ class _SaidasScreenState extends State<SaidasScreen> {
   Future<void> carregar() async {
     try {
       final data = await service.listar();
+      if (!mounted) return;
       setState(() {
         saidas = data;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao carregar saídas: $e")),
@@ -41,6 +43,7 @@ class _SaidasScreenState extends State<SaidasScreen> {
       context,
       MaterialPageRoute(builder: (_) => SaidaFormScreen(saida: s)),
     );
+    if (!mounted) return;
     if (mudou == true) carregar();
   }
 
@@ -73,8 +76,10 @@ class _SaidasScreenState extends State<SaidasScreen> {
                               onPressed: () async {
                                 try {
                                   await service.excluir(s.id!);
+                                  if (!context.mounted) return;
                                   carregar();
                                 } catch (e) {
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text("Erro ao excluir: $e")),
                                   );

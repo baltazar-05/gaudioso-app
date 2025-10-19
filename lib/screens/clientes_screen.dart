@@ -32,6 +32,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
   Future<void> carregar() async {
     try {
       final data = await service.listar();
+      if (!mounted) return;
       data.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
       setState(() {
         clientes = data;
@@ -39,6 +40,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         carregando = false;
       });
@@ -52,6 +54,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
       context,
       MaterialPageRoute(builder: (_) => ClienteFormScreen(cliente: c)),
     );
+    if (!mounted) return;
     if (mudou == true) carregar();
   }
 
@@ -149,8 +152,10 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                       onPressed: () async {
                                         try {
                                           await service.excluir(c.id!);
+                                          if (!context.mounted) return;
                                           carregar();
                                         } catch (e) {
+                                          if (!context.mounted) return;
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(SnackBar(content: Text('Erro ao excluir: $e')));
                                         }
