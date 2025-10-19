@@ -44,6 +44,7 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
       context,
       MaterialPageRoute(builder: (_) => FornecedorFormScreen(fornecedor: f)),
     );
+    if (!mounted) return;
     if (mudou == true) carregar();
   }
 
@@ -134,6 +135,7 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
                                       icon: Icon(Icons.delete, color: accent),
                                       onPressed: () async {
                                         await service.excluir(f.id!);
+                                        if (!context.mounted) return;
                                         carregar();
                                       },
                                     ),
