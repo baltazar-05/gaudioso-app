@@ -1,54 +1,54 @@
-ï»¿# Gaudioso App
+# Gaudioso App
 
-Aplicativo Flutter para gestÃ£o de reciclagem (materiais, parceiros, entradas/saÃ­das, estoque e relatÃ³rios), com autenticaÃ§Ã£o e integraÃ§Ã£o a backend REST.
+Aplicativo Flutter para gestão de reciclagem (materiais, parceiros, entradas/saídas, estoque e relatórios), com autenticação e integração a backend REST.
 
 ## Requisitos
 - Flutter 3.35.6 (canal stable)
-- Android toolchain configurado (SDK + licenÃ§as aceitas)
+- Android toolchain configurado (SDK + licenças aceitas)
 - Opcional: Visual Studio (para build Windows)
 
-## ConfiguraÃ§Ã£o de API
-A base da API Ã© configurÃ¡vel via `--dart-define`:
+## Configuração de API
+A base da API é configurável via `--dart-define`:
 - Arquivo: `lib/core/api_config.dart`
- - PadrÃ£o: `https://api.gaudiosoreciclagens.com.br` (domÃ­nio fixo via Cloudflare Tunnel)
+ - Padrão: `https://api.gaudiosoreciclagens.com.br` (domínio fixo via Cloudflare Tunnel)
 - Exemplo para apontar um backend remoto:
   - `flutter run --dart-define=API_BASE=https://seu-backend.com`
 
 ## Como rodar
-- Instale dependÃªncias: `flutter pub get`
+- Instale dependências: `flutter pub get`
 - Execute no dispositivo/emulador: `flutter run`
 - Para web: `flutter run -d chrome`
 
-## Notas da versÃ£o 1.2
-- Nova tela de login com fluxo de registro e sessÃ£o persistida (`lib/screens/login/login_screen.dart`, `lib/services/auth_service.dart`).
-- IntegraÃ§Ã£o com backend REST centralizada (`lib/services/api_service.dart` e `lib/core/api_config.dart`).
-- ServiÃ§os atualizados para operaÃ§Ãµes de CRUD e consumo de API:
-  - Clientes, Fornecedores, Materiais, Entradas, SaÃ­das, Estoque, RelatÃ³rios (pasta `lib/services/`).
-- Menu e navegaÃ§Ã£o aprimorados com opÃ§Ã£o de logout (`lib/screens/menu_screen.dart`).
-- Novas dependÃªncias e melhorias de UI/UX:
+## Notas da versão 1.2
+- Nova tela de login com fluxo de registro e sessão persistida (`lib/screens/login/login_screen.dart`, `lib/services/auth_service.dart`).
+- Integração com backend REST centralizada (`lib/services/api_service.dart` e `lib/core/api_config.dart`).
+- Serviços atualizados para operações de CRUD e consumo de API:
+  - Clientes, Fornecedores, Materiais, Entradas, Saídas, Estoque, Relatórios (pasta `lib/services/`).
+- Menu e navegação aprimorados com opção de logout (`lib/screens/menu_screen.dart`).
+- Novas dependências e melhorias de UI/UX:
   - `http`, `intl`, `provider`, `flutter_localizations`, `mask_text_input_formatter`, `google_fonts`, `sliding_up_panel`, `shared_preferences`.
-- Diversas correÃ§Ãµes e ajustes de estabilidade.
+- Diversas correções e ajustes de estabilidade.
 
-## Notas da versÃ£o 1.1
-- Fluxo de autenticaÃ§Ã£o com tela de login e registro, integraÃ§Ã£o com API e armazenamento local da sessÃ£o.
-- Menu principal redesenhado com atalhos para materiais, parceiros, estoque, entradas, saÃ­das e relatÃ³rios.
-- CRUD completos para materiais, fornecedores e clientes, com validaÃ§Ãµes de CPF/CNPJ e telefone.
-- Telas de formulÃ¡rio e listagem para entradas e saÃ­das de materiais totalmente conectadas ao backend.
-- Consultas de estoque e relatÃ³rios com filtro por perÃ­odo e exibiÃ§Ã£o de totais de entrada, saÃ­da e saldo.
-- Camada de serviÃ§os HTTP centralizada (`ApiService`) e modelos tipados para todas as entidades.
-- UtilitÃ¡rios para formataÃ§Ã£o dinÃ¢mica de CPF/CNPJ e validaÃ§Ãµes reutilizÃ¡veis de campos.
-- DependÃªncias: http, intl, provider, flutter_localizations, mask_text_input_formatter, google_fonts, sliding_up_panel, shared_preferences.
+## Notas da versão 1.1
+- Fluxo de autenticação com tela de login e registro, integração com API e armazenamento local da sessão.
+- Menu principal redesenhado com atalhos para materiais, parceiros, estoque, entradas, saídas e relatórios.
+- CRUD completos para materiais, fornecedores e clientes, com validações de CPF/CNPJ e telefone.
+- Telas de formulário e listagem para entradas e saídas de materiais totalmente conectadas ao backend.
+- Consultas de estoque e relatórios com filtro por período e exibição de totais de entrada, saída e saldo.
+- Camada de serviços HTTP centralizada (`ApiService`) e modelos tipados para todas as entidades.
+- Utilitários para formatação dinâmica de CPF/CNPJ e validações reutilizáveis de campos.
+- Dependências: http, intl, provider, flutter_localizations, mask_text_input_formatter, google_fonts, sliding_up_panel, shared_preferences.
 
-## Cloudflare Tunnel (domÃ­nio fixo)
+## Cloudflare Tunnel (domínio fixo)
 
-Permite expor seu backend local em um subdomÃ­nio pÃºblico. Exemplo com o tÃºnel `gaudioso-api` e o host `api.gaudiosoreciclagens.com.br`.
+Permite expor seu backend local em um subdomínio público. Exemplo com o túnel `gaudioso-api` e o host `api.gaudiosoreciclagens.com.br`.
 
-- PrÃ©â€‘requisitos: conta Cloudflare e `cloudflared` instalado.
+- Pré-requisitos: conta Cloudflare e `cloudflared` instalado.
 - Criar e apontar DNS:
   - `cloudflared tunnel login`
   - `cloudflared tunnel create gaudioso-api`
   - `cloudflared tunnel route dns gaudioso-api api.gaudiosoreciclagens.com.br`
-- ConfiguraÃ§Ã£o local (Windows): crie `C:\\Users\\vitor\\.cloudflared\\config.yml` com:
+- Configuração local (Windows): crie `C:\\Users\\vitor\\.cloudflared\\config.yml` com:
 
 ```
 tunnel: a6cd0133-a03a-4c2a-a5c0-da02e5794c7e
@@ -60,16 +60,16 @@ ingress:
   - service: http_status:404
 ```
 
-- Executar o tÃºnel: `cloudflared tunnel run gaudioso-api`
+- Executar o túnel: `cloudflared tunnel run gaudioso-api`
 - Verificar: `cloudflared tunnel info gaudioso-api` e `cloudflared tunnel list`
 
-ObservaÃ§Ã£o: ajuste `service:` para a porta/host do seu backend, se necessÃ¡rio (ex.: `http://127.0.0.1:8081`).
+Observação: ajuste `service:` para a porta/host do seu backend, se necessário (ex.: `http://127.0.0.1:8081`).
 
 ## Build de release (Android)
-- Atualize a versÃ£o em `pubspec.yaml` (jÃ¡ em `1.2.0+2`).
+- Atualize a versão em `pubspec.yaml` (já em `1.2.1+3`).
 - Gere APK: `flutter build apk --release`
 - Ou AppBundle: `flutter build appbundle --release`
 
 ---
 
-Para dÃºvidas ou problemas, abra uma issue no repositÃ³rio.
+Para dúvidas ou problemas, abra uma issue no repositório.
