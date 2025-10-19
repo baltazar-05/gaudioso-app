@@ -64,6 +64,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Erro ao salvar cliente: $e')));
     }

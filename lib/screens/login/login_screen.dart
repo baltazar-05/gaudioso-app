@@ -46,8 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       return;
     }
-    if (!mounted) return;
     final saved = await _auth.currentUser();
+    if (!mounted) return;
     final displayName = (saved?['nome'] ?? saved?['username'] ?? loginId) as String;
     Navigator.pushReplacement(
       context,

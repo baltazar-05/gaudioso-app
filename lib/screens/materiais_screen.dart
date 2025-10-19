@@ -120,7 +120,7 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Compra: R\$ ${m.precoCompra.toStringAsFixed(2)} | Venda: R\$ ${m.precoVenda.toStringAsFixed(2)}',
-                                style: TextStyle(color: accent.withOpacity(0.9)),
+                                style: TextStyle(color: accent.withValues(alpha: 0.9)),
                               ),
                             ],
                           ),

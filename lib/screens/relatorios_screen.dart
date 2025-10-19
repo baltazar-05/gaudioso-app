@@ -27,6 +27,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
       locale: const Locale("pt", "BR"),
     );
     if (selecionada != null) {
+      if (!mounted) return;
       setState(() {
         if (isInicio) {
           inicio = selecionada;
@@ -52,11 +53,13 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
       final dataFim = DateFormat("yyyy-MM-dd").format(fim!);
 
       final dados = await service.gerar(dataInicio, dataFim);
+      if (!mounted) return;
       setState(() {
         relatorios = dados;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro: $e")),

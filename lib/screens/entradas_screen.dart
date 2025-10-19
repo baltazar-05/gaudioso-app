@@ -24,11 +24,13 @@ class _EntradasScreenState extends State<EntradasScreen> {
   Future<void> carregar() async {
     try {
       final data = await service.listar();
+      if (!mounted) return;
       setState(() {
         entradas = data;
         carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregando = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao carregar entradas: $e")),
@@ -41,6 +43,7 @@ class _EntradasScreenState extends State<EntradasScreen> {
       context,
       MaterialPageRoute(builder: (_) => EntradaFormScreen(entrada: e)),
     );
+    if (!mounted) return;
     if (mudou == true) carregar();
   }
 
@@ -73,8 +76,10 @@ class _EntradasScreenState extends State<EntradasScreen> {
                               onPressed: () async {
                                 try {
                                   await service.excluir(e.id!);
+                                  if (!mounted) return;
                                   carregar();
                                 } catch (err) {
+                                  if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text("Erro ao excluir: $err")),
                                   );
