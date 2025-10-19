@@ -10,7 +10,7 @@ Aplicativo Flutter para gestão de reciclagem (materiais, parceiros, entradas/sa
 ## Configuração de API
 A base da API é configurável via `--dart-define`:
 - Arquivo: `lib/core/api_config.dart`
-- Padrão: `http://10.0.2.2:8080` (Android emulador)
+ - Padrão: `https://api.gaudiosoreciclagens.com.br` (domínio fixo via Cloudflare Tunnel)
 - Exemplo para apontar um backend remoto:
   - `flutter run --dart-define=API_BASE=https://seu-backend.com`
 
@@ -38,6 +38,32 @@ A base da API é configurável via `--dart-define`:
 - Camada de serviços HTTP centralizada (`ApiService`) e modelos tipados para todas as entidades.
 - Utilitários para formatação dinâmica de CPF/CNPJ e validações reutilizáveis de campos.
 - Dependências: http, intl, provider, flutter_localizations, mask_text_input_formatter, google_fonts, sliding_up_panel, shared_preferences.
+
+## Cloudflare Tunnel (domínio fixo)
+
+Permite expor seu backend local em um subdomínio público. Exemplo com o túnel `gaudioso-api` e o host `api.gaudiosoreciclagens.com.br`.
+
+- Pré‑requisitos: conta Cloudflare e `cloudflared` instalado.
+- Criar e apontar DNS:
+  - `cloudflared tunnel login`
+  - `cloudflared tunnel create gaudioso-api`
+  - `cloudflared tunnel route dns gaudioso-api api.gaudiosoreciclagens.com.br`
+- Configuração local (Windows): crie `C:\\Users\\vitor\\.cloudflared\\config.yml` com:
+
+```
+tunnel: a6cd0133-a03a-4c2a-a5c0-da02e5794c7e
+credentials-file: C:\\Users\\vitor\\.cloudflared\\a6cd0133-a03a-4c2a-a5c0-da02e5794c7e.json
+
+ingress:
+  - hostname: api.gaudiosoreciclagens.com.br
+    service: http://localhost:8080
+  - service: http_status:404
+```
+
+- Executar o túnel: `cloudflared tunnel run gaudioso-api`
+- Verificar: `cloudflared tunnel info gaudioso-api` e `cloudflared tunnel list`
+
+Observação: ajuste `service:` para a porta/host do seu backend, se necessário (ex.: `http://127.0.0.1:8081`).
 
 ## Build de release (Android)
 - Atualize a versão em `pubspec.yaml` (já em `1.2.0+2`).

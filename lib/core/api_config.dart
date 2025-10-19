@@ -1,7 +1,9 @@
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE',
-    defaultValue: 'http://10.0.2.2:8080',
+    // Default to the fixed public domain behind Cloudflare Tunnel
+    // Override at runtime with: --dart-define=API_BASE=https://your-host
+    defaultValue: 'https://api.gaudiosoreciclagens.com.br',
   );
 
   static String endpoint(String path) {
