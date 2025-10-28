@@ -11,10 +11,26 @@ class MaterialService {
 
   Future<List<MaterialItem>> listar() async {
     final res = await http.get(Uri.parse(baseUrl));
+
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => MaterialItem.fromJson(e)).toList();
+      final body = jsonDecode(res.body);
+
+      // Se a API retorna diretamente uma lista
+      if (body is List) {
+        return body.map((e) => MaterialItem.fromJson(e)).toList();
+      }
+
+      // Se a API retorna um objeto que contém a lista dentro de "content" ou "materiais"
+      if (body is Map) {
+        final data = body['content'] ?? body['materiais'] ?? [];
+        if (data is List) {
+          return data.map((e) => MaterialItem.fromJson(e)).toList();
+        }
+      }
+
+      throw Exception("Formato de resposta inesperado da API");
     }
+
     throw Exception("Erro ao listar materiais: ${res.statusCode}");
   }
 
