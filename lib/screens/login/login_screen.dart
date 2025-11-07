@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final displayName = (saved?['nome'] ?? saved?['username'] ?? loginId) as String;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => MenuScreen(userEmail: displayName)),
+      MaterialPageRoute(builder: (_) => MenuScreen(username: displayName)),
     );
   }
 
@@ -70,23 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildBackground() => Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1BAA5F), Color(0xFF23B369)],
+  Widget _buildBackground() => Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF1BAA5F), Color(0xFF23B369)],
+              ),
+            ),
           ),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.recycling,
-            size: 180,
-            color: Colors.white.withValues(alpha: 0.14),
+          Opacity(
+            opacity: 0.18,
+            child: Image.asset(
+              'assets/Planeta.png',
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
+        ],
       );
 
   Widget _buildWelcomeHeader() => Positioned(

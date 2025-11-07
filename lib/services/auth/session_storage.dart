@@ -28,4 +28,3 @@ class SessionStorage {
     await prefs.remove(_kCurrentUser);
   }
 }
-

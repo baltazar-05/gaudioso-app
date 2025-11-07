@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
 import '../models/fornecedor.dart';
 import '../services/fornecedor_service.dart';
 import 'fornecedor_form_screen.dart';
@@ -32,6 +34,7 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
   Future<void> carregar() async {
     final data = await service.listar();
     data.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+    if (!mounted) return;
     setState(() {
       fornecedores = data;
       filtrados = _filtrar(_buscaCtrl.text, data);
@@ -42,7 +45,19 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
   Future<void> _abrirFormulario({Fornecedor? f}) async {
     final mudou = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => FornecedorFormScreen(fornecedor: f)),
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => FornecedorFormScreen(fornecedor: f),
+        transitionsBuilder: (_, anim, __, child) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(anim),
+            child: child,
+          ),
+        ),
+      ),
     );
     if (!mounted) return;
     if (mudou == true) carregar();
@@ -50,38 +65,87 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = Colors.green.shade300;
-    final card = Colors.green.shade50;
-    final accent = Colors.black;
+    final scheme = Theme.of(context).colorScheme;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final card = scheme.surface;
+    final accent = scheme.onSurface;
+    const iconColor = Colors.black87;
+    const deleteColor = Colors.redAccent;
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(title: const Text('Fornecedores'), backgroundColor: bg, foregroundColor: Colors.black),
-      body: carregando
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(LucideIcons.users, color: Color.fromARGB(255, 0, 0, 0)),
+            SizedBox(width: 8),
+            Text(
+              'Fornecedores',
+              style: TextStyle(
+                color: Color.fromARGB(255, 0, 0, 0),
+                fontSize: 22,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF81C784), Color(0xFF4CAF50)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: carregando
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   child: TextField(
                     controller: _buscaCtrl,
                     onChanged: (q) => setState(() {
                       filtrados = _filtrar(q, fornecedores);
                     }),
-                    style: const TextStyle(color: Colors.black),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: accent),
                     decoration: InputDecoration(
                       hintText: 'Buscar por nome do fornecedor',
-                      hintStyle: const TextStyle(color: Colors.black54),
-                      prefixIcon: const Icon(Icons.search, color: Colors.black),
+                      hintStyle: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: accent.withValues(alpha: 0.54)),
+                      prefixIcon: Icon(LucideIcons.search, color: iconColor),
                       filled: true,
-                      fillColor: Colors.green.shade50,
+                      fillColor: card,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.black54),
+                        borderSide: BorderSide(
+                          color: accent.withValues(alpha: 0.54),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.black),
+                        borderSide: BorderSide(color: scheme.primary),
                       ),
                     ),
                   ),
@@ -92,54 +156,92 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
                     child: filtrados.isEmpty
                         ? ListView(
                             children: const [
-                              Padding(
-                                padding: EdgeInsets.only(top: 80),
-                                child: Center(
-                                  child: Text('Nenhum fornecedor encontrado',
-                                      style: TextStyle(color: Colors.black)),
-                                ),
-                              )
+                              SizedBox(height: 80),
+                              _EmptyState(
+                                icon: LucideIcons.user,
+                                texto: 'Nenhum fornecedor encontrado',
+                              ),
                             ],
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                             itemCount: filtrados.length,
                             itemBuilder: (_, i) {
                               final f = filtrados[i];
-                              return Container(
+                              final id = f.id ?? i;
+                              return Card(
+                                elevation: 1.5,
                                 margin: const EdgeInsets.symmetric(vertical: 8),
-                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: card,
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(f.nome,
-                                              style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 4),
-                                          Text('Doc: ${f.documento} | Tel: ${f.telefone}',
-                                              style: const TextStyle(color: Colors.black87)),
-                                        ],
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  leading: Hero(
+                                    tag: 'fornecedor_$id',
+                                      child: CircleAvatar(
+                                        radius: 22,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(
+                                          LucideIcons.user,
+                                          color: iconColor,
+                                        ),
                                       ),
+                                  ),
+                                  title: Text(
+                                    f.nome,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          color: accent,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Wrap(
+                                      spacing: 12,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        _IconText(
+                                          icon: LucideIcons.idCard,
+                                          text: f.documento,
+                                          color: accent,
+                                          iconColor: iconColor,
+                                        ),
+                                        _IconText(
+                                          icon: LucideIcons.phone,
+                                          text: f.telefone,
+                                          color: accent,
+                                          iconColor: iconColor,
+                                        ),
+                                      ],
                                     ),
-                                    IconButton(
-                                      icon: Icon(Icons.edit, color: accent),
-                                      onPressed: () => _abrirFormulario(f: f),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete, color: accent),
-                                      onPressed: () async {
-                                        await service.excluir(f.id!);
-                                        if (!context.mounted) return;
-                                        carregar();
-                                      },
-                                    ),
-                                  ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(LucideIcons.pencil, color: iconColor),
+                                        onPressed: () => _abrirFormulario(f: f),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        icon: const Icon(LucideIcons.trash2, color: deleteColor),
+                                        onPressed: () async {
+                                          await service.excluir(f.id!);
+                                          if (!context.mounted) return;
+                                          carregar();
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
@@ -148,10 +250,13 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
                 ),
               ],
             ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _abrirFormulario(),
-        backgroundColor: Colors.green.shade800,
-        child: const Icon(Icons.add),
+        backgroundColor:
+            Theme.of(context).floatingActionButtonTheme.backgroundColor ??
+            scheme.tertiary,
+        child: Icon(LucideIcons.plus, color: iconColor),
       ),
     );
   }
@@ -165,8 +270,68 @@ extension _FornecedorFiltro on _FornecedoresScreenState {
       copy.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
       return copy;
     }
-    final result = base.where((f) => f.nome.toLowerCase().contains(termo)).toList();
+    final result = base
+        .where((f) => f.nome.toLowerCase().contains(termo))
+        .toList();
     result.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
     return result;
+  }
+}
+
+class _IconText extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+  final Color iconColor;
+
+  const _IconText({
+    required this.icon,
+    required this.text,
+    required this.color,
+    this.iconColor = Colors.black87,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: color.withValues(alpha: 0.87)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String texto;
+
+  const _EmptyState({required this.icon, required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.54);
+    return Column(
+      children: [
+        Icon(icon, size: 48, color: Colors.black54),
+        const SizedBox(height: 8),
+        Text(
+          texto,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+        ),
+      ],
+    );
   }
 }
