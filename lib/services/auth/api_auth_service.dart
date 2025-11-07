@@ -23,11 +23,23 @@ class ApiAuthService {
       final token = res['token'];
       final apiUsername = res['username'];
       final nome = res['nome'];
+      final rawId = res['id'];
+
+      int? id;
+      if (rawId is int) {
+        id = rawId;
+      } else if (rawId is num) {
+        id = rawId.toInt();
+      } else if (rawId is String) {
+        id = int.tryParse(rawId);
+      }
+
       if (token is String && apiUsername is String) {
         return {
           'token': token,
           'username': apiUsername,
           'nome': nome is String && nome.isNotEmpty ? nome : apiUsername,
+          if (id != null) 'id': id,
         };
       }
     }

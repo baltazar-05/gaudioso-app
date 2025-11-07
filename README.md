@@ -1,58 +1,80 @@
-# Gaudioso App
+Ôªø# Gaudioso App
 
-Aplicativo Flutter para gest„o de reciclagem (materiais, parceiros, entradas/saÌdas, estoque e relatÛrios), com autenticaÁ„o e integraÁ„o a backend REST.
+Aplicativo Flutter para gest√£o de reciclagem (materiais, parceiros, entradas/sa√≠das, estoque e relat√≥rios), com autentica√ß√£o e integra√ß√£o a backend REST.
 
 ## Requisitos
 - Flutter 3.35.6 (canal stable)
-- Android toolchain configurado (SDK + licenÁas aceitas)
+- Android toolchain configurado (SDK + licen√ßas aceitas)
 - Opcional: Visual Studio (para build Windows)
 
-## ConfiguraÁ„o de API
-A base da API È configur·vel via `--dart-define`:
+## Configura√ß√£o de API
+A base da API √© configur√°vel via `--dart-define`:
 - Arquivo: `lib/core/api_config.dart`
- - Padr„o: `https://api.gaudiosoreciclagens.com.br` (domÌnio fixo via Cloudflare Tunnel)
+- Padr√£o: `https://api.gaudiosoreciclagens.com.br` (dom√≠nio fixo via Cloudflare Tunnel)
 - Exemplo para apontar um backend remoto:
   - `flutter run --dart-define=API_BASE=https://seu-backend.com`
 
 ## Como rodar
-- Instale dependÍncias: `flutter pub get`
+- Instale depend√™ncias: `flutter pub get`
 - Execute no dispositivo/emulador: `flutter run`
 - Para web: `flutter run -d chrome`
 
-## Notas da vers„o 1.2
-- Nova tela de login com fluxo de registro e sess„o persistida (`lib/screens/login/login_screen.dart`, `lib/services/auth_service.dart`).
-- IntegraÁ„o com backend REST centralizada (`lib/services/api_service.dart` e `lib/core/api_config.dart`).
-- ServiÁos atualizados para operaÁıes de CRUD e consumo de API:
-  - Clientes, Fornecedores, Materiais, Entradas, SaÌdas, Estoque, RelatÛrios (pasta `lib/services/`).
-- Menu e navegaÁ„o aprimorados com opÁ„o de logout (`lib/screens/menu_screen.dart`).
-- Novas dependÍncias e melhorias de UI/UX:
+## Notas da vers√£o 2.0
+
+Grande atualiza√ß√£o visual e de navega√ß√£o, com foco em produtividade no dia a dia e vis√£o do fluxo de movimenta√ß√µes.
+
+- Visual/tema: Material 3 com paleta verde, tipografia Poppins, √≠cones Lucide e uso de degrad√™s em √°reas-chave.
+- Barra inferior renovada: agora com quatro abas ‚Äî Resumo, Fluxo, Estoque e Relat√≥rios.
+- Side bar (drawer): acesso r√°pido a Perfil, Configura√ß√µes (em breve), Modo escuro (em breve) e Sair.
+- Tela Resumo: cart√µes de KPI e um destaque ‚Äú√öltima entrada/sa√≠da‚Äù que alterna automaticamente a cada 5s (cards temporizados), al√©m de atalhos com cart√µes estilizados (GaudiosoActionCard) para Materiais, Parceiros, Registrar Entrada e Registrar Sa√≠da.
+- Fluxo de movimenta√ß√µes:
+  - Movimentos: lista agrupada por minuto e parceiro (entradas/sa√≠das), com totais por grupo e acesso r√°pido √† edi√ß√£o do item. Puxa‚Äëpara‚Äëatualizar inclu√≠do.
+  - Lotes (Entradas e Sa√≠das): filtros por data ou intervalo; cards expans√≠veis mostram resumo do lote (qtd, peso total, valor total e √∫ltimo registro) e a√ß√µes para renomear ou excluir lote. Itens carregados por lote permitem editar/remover; em Sa√≠das √© poss√≠vel adicionar itens com m√∫ltiplas pesagens.
+- Servi√ßos de lote: `EntradaLoteService` e `SaidaLoteService` com fallbacks para cen√°rios onde a API ainda n√£o fornece agrega√ß√£o/itens de lote, garantindo continuidade de uso.
+- Splash/Login: nova tela de splash cuida do boot e roteamento; tela de login redesenhada com gradiente e ilustra√ß√£o (`assets/Planeta.png`).
+- Qualidade de vida: parsing de datas mais resiliente, anima√ß√µes sutis em cards/KPIs, navega√ß√£o simplificada e feedbacks melhores de erro/carregamento.
+
+Arquivos principais desta vers√£o:
+- `lib/screens/menu_screen.dart`: novo layout, bottom bar e drawer; Resumo com KPIs e cards temporizados.
+- `lib/screens/fluxo_movimentos_screen.dart`: agrupamento por minuto/parceiro com totais e atalho para edi√ß√£o.
+- `lib/screens/fluxo_lotes_entradas_screen.dart` e `lib/screens/fluxo_lotes_saidas_screen.dart`: vis√£o por lotes com filtros, expans√£o e a√ß√µes (renomear/excluir).
+- `lib/services/entrada_lote_service.dart` e `lib/services/saida_lote_service.dart`: endpoints de lotes com fallbacks.
+- `lib/screens/splash_screen.dart` e `lib/screens/login/login_screen.dart`: experi√™ncia de entrada modernizada.
+
+## Notas da vers√£o 1.2
+- Nova tela de login com fluxo de registro e sess√£o persistida (`lib/screens/login/login_screen.dart`, `lib/services/auth_service.dart`).
+- Integra√ß√£o com backend REST centralizada (`lib/services/api_service.dart` e `lib/core/api_config.dart`).
+- Servi√ßos atualizados para opera√ß√µes de CRUD e consumo de API:
+  - Clientes, Fornecedores, Materiais, Entradas, Sa√≠das, Estoque, Relat√≥rios (pasta `lib/services/`).
+- Menu e navega√ß√£o aprimorados com op√ß√£o de logout (`lib/screens/menu_screen.dart`).
+- Novas depend√™ncias e melhorias de UI/UX:
   - `http`, `intl`, `provider`, `flutter_localizations`, `mask_text_input_formatter`, `google_fonts`, `sliding_up_panel`, `shared_preferences`.
-- Diversas correÁıes e ajustes de estabilidade.
+- Diversas corre√ß√µes e ajustes de estabilidade.
 
-## Notas da vers„o 1.1
-- Fluxo de autenticaÁ„o com tela de login e registro, integraÁ„o com API e armazenamento local da sess„o.
-- Menu principal redesenhado com atalhos para materiais, parceiros, estoque, entradas, saÌdas e relatÛrios.
-- CRUD completos para materiais, fornecedores e clientes, com validaÁıes de CPF/CNPJ e telefone.
-- Telas de formul·rio e listagem para entradas e saÌdas de materiais totalmente conectadas ao backend.
-- Consultas de estoque e relatÛrios com filtro por perÌodo e exibiÁ„o de totais de entrada, saÌda e saldo.
-- Camada de serviÁos HTTP centralizada (`ApiService`) e modelos tipados para todas as entidades.
-- Utilit·rios para formataÁ„o din‚mica de CPF/CNPJ e validaÁıes reutiliz·veis de campos.
-- DependÍncias: http, intl, provider, flutter_localizations, mask_text_input_formatter, google_fonts, sliding_up_panel, shared_preferences.
+## Notas da vers√£o 1.1
+- Fluxo de autentica√ß√£o com tela de login e registro, integra√ß√£o com API e armazenamento local da sess√£o.
+- Menu principal redesenhado com atalhos para materiais, parceiros, estoque, entradas, sa√≠das e relat√≥rios.
+- CRUD completos para materiais, fornecedores e clientes, com valida√ß√µes de CPF/CNPJ e telefone.
+- Telas de formul√°rio e listagem para entradas e sa√≠das de materiais totalmente conectadas ao backend.
+- Consultas de estoque e relat√≥rios com filtro por per√≠odo e exibi√ß√£o de totais de entrada, sa√≠da e saldo.
+- Camada de servi√ßos HTTP centralizada (`ApiService`) e modelos tipados para todas as entidades.
+- Utilit√°rios para formata√ß√£o din√¢mica de CPF/CNPJ e valida√ß√µes reutiliz√°veis de campos.
+- Depend√™ncias: http, intl, provider, flutter_localizations, mask_text_input_formatter, google_fonts, sliding_up_panel, shared_preferences.
 
-## Cloudflare Tunnel (domÌnio fixo)
+## Cloudflare Tunnel (dom√≠nio fixo)
 
-Permite expor seu backend local em um subdomÌnio p˙blico. Exemplo com o t˙nel `gaudioso-api` e o host `api.gaudiosoreciclagens.com.br`.
+Permite expor seu backend local em um subdom√≠nio p√∫blico. Exemplo com o t√∫nel `gaudioso-api` e o host `api.gaudiosoreciclagens.com.br`.
 
-- PrÈ-requisitos: conta Cloudflare e `cloudflared` instalado.
+- Pr√©-requisitos: conta Cloudflare e `cloudflared` instalado.
 - Criar e apontar DNS:
   - `cloudflared tunnel login`
   - `cloudflared tunnel create gaudioso-api`
   - `cloudflared tunnel route dns gaudioso-api api.gaudiosoreciclagens.com.br`
-- ConfiguraÁ„o local (Windows): crie `C:\\Users\\vitor\\.cloudflared\\config.yml` com:
+- Configura√ß√£o local (Windows): crie `C:\Users\vitor\.cloudflared\config.yml` com:
 
 ```
 tunnel: a6cd0133-a03a-4c2a-a5c0-da02e5794c7e
-credentials-file: C:\\Users\\vitor\\.cloudflared\\a6cd0133-a03a-4c2a-a5c0-da02e5794c7e.json
+credentials-file: C:\Users\vitor\.cloudflared\a6cd0133-a03a-4c2a-a5c0-da02e5794c7e.json
 
 ingress:
   - hostname: api.gaudiosoreciclagens.com.br
@@ -60,16 +82,16 @@ ingress:
   - service: http_status:404
 ```
 
-- Executar o t˙nel: `cloudflared tunnel run gaudioso-api`
+- Executar o t√∫nel: `cloudflared tunnel run gaudioso-api`
 - Verificar: `cloudflared tunnel info gaudioso-api` e `cloudflared tunnel list`
 
-ObservaÁ„o: ajuste `service:` para a porta/host do seu backend, se necess·rio (ex.: `http://127.0.0.1:8081`).
+Observa√ß√£o: ajuste `service:` para a porta/host do seu backend, se necess√°rio (ex.: `http://127.0.0.1:8081`).
 
 ## Build de release (Android)
-- Atualize a vers„o em `pubspec.yaml` (j· em `1.2.1+3`).
+- Atualize a vers√£o em `pubspec.yaml` (agora em `2.0.0+0`).
 - Gere APK: `flutter build apk --release`
 - Ou AppBundle: `flutter build appbundle --release`
 
 ---
 
-Para d˙vidas ou problemas, abra uma issue no repositÛrio.
+Para d√∫vidas ou problemas, abra uma issue no reposit√≥rio.

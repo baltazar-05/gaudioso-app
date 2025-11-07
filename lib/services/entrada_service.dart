@@ -24,7 +24,8 @@ class EntradaService {
       body: jsonEncode(e.toJson()),
     );
     if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception("Erro ao adicionar entrada");
+      final body = res.body;
+      throw Exception("Erro ao adicionar entrada (HTTP ${res.statusCode}): $body");
     }
   }
 
@@ -35,14 +36,16 @@ class EntradaService {
       body: jsonEncode(e.toJson()),
     );
     if (res.statusCode != 200) {
-      throw Exception("Erro ao atualizar entrada");
+      final body = res.body;
+      throw Exception("Erro ao atualizar entrada (HTTP ${res.statusCode}): $body");
     }
   }
 
   Future<void> excluir(int id) async {
     final res = await http.delete(Uri.parse("$baseUrl/$id"));
     if (res.statusCode != 204 && res.statusCode != 200) {
-      throw Exception("Erro ao excluir entrada");
+      final body = res.body;
+      throw Exception("Erro ao excluir entrada (HTTP ${res.statusCode}): $body");
     }
   }
 }
