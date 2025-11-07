@@ -25,7 +25,8 @@ class SaidaService {
       body: jsonEncode(s.toJson()),
     );
     if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception("Erro ao adicionar saída");
+      final body = res.body;
+      throw Exception("Erro ao adicionar saída (HTTP ${res.statusCode}): $body");
     }
   }
 
@@ -36,14 +37,17 @@ class SaidaService {
       body: jsonEncode(s.toJson()),
     );
     if (res.statusCode != 200) {
-      throw Exception("Erro ao atualizar saída");
+      final body = res.body;
+      throw Exception("Erro ao atualizar saída (HTTP ${res.statusCode}): $body");
     }
   }
 
   Future<void> excluir(int id) async {
     final res = await http.delete(Uri.parse("$baseUrl/$id"));
     if (res.statusCode != 204 && res.statusCode != 200) {
-      throw Exception("Erro ao excluir saída");
+      final body = res.body;
+      throw Exception("Erro ao excluir saída (HTTP ${res.statusCode}): $body");
     }
   }
 }
+
