@@ -7,9 +7,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../models/lucro_real_data.dart';
-import '../models/lucro_esperado_data.dart';
-import '../models/movimentacao_data.dart';
 import '../services/relatorio_service.dart';
 import 'menu_screen.dart';
 
@@ -276,14 +273,12 @@ class RelatorioLucroRealPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = RelatorioService();
-    return _RelatorioBasePage<LucroRealData>(
+    return _RelatorioBasePage(
       username: username,
       title: 'Lucro Real',
-      description: 'Selecione o periodo para gerar o relatorio no padrao HTML e consulte o resumo antes de baixar.',
+      description: 'Selecione o periodo e gere o PDF de lucro real (compras, vendas, despesas e margens).',
       filePrefix: 'Relatorio_Lucro',
       onGeneratePdf: (ini, fim) => service.gerarPdf(ini, fim, usuario: username),
-      resumoLoader: (ini, fim) => service.buscarLucroRealResumo(ini, fim),
-      resumoBuilder: (data) => _LucroRealResumoView(data: data),
     );
   }
 }
@@ -295,15 +290,13 @@ class RelatorioLucroEsperadoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = RelatorioService();
-    return _RelatorioBasePage<LucroEsperadoData>(
+    return _RelatorioBasePage(
       username: username,
       title: 'Lucro Esperado',
-      description: 'Escolha o periodo e veja a projecao do estoque antes de gerar o PDF.',
+      description: 'Relatorio baseado no estoque atual. Nao requer selecao de datas.',
       filePrefix: 'Relatorio_Lucro_Esperado',
       requiresDateRange: false,
       onGeneratePdf: (ini, fim) => service.gerarLucroEsperadoPdf(usuario: username, dataInicio: ini, dataFim: fim),
-      resumoLoader: (_, __) => service.buscarLucroEsperadoResumo(usuario: username),
-      resumoBuilder: (data) => _LucroEsperadoResumoView(data: data),
     );
   }
 }
@@ -315,26 +308,22 @@ class RelatorioMovimentacaoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = RelatorioService();
-    return _RelatorioBasePage<MovimentacaoData>(
+    return _RelatorioBasePage(
       username: username,
       title: 'Movimentacao',
-      description: 'Selecione o periodo desejado, visualize o consolidado e baixe o PDF.',
+      description: 'Selecione o periodo e gere o PDF consolidado de entradas e saidas (pesos e valores).',
       filePrefix: 'Relatorio_Movimentacao',
       onGeneratePdf: (ini, fim) => service.gerarMovimentacaoPdf(ini, fim),
-      resumoLoader: (ini, fim) => service.buscarMovimentacao(dataInicio: ini, dataFim: fim),
-      resumoBuilder: (data) => _MovimentacaoResumoView(data: data),
     );
   }
 }
 
-class _RelatorioBasePage<T> extends StatefulWidget {
+class _RelatorioBasePage extends StatefulWidget {
   final String username;
   final String title;
   final String description;
   final String filePrefix;
   final Future<Uint8List> Function(String dataInicio, String dataFim) onGeneratePdf;
-  final Future<T> Function(String dataInicio, String dataFim)? resumoLoader;
-  final Widget Function(T data)? resumoBuilder;
   final bool requiresDateRange;
 
   const _RelatorioBasePage({
@@ -343,31 +332,18 @@ class _RelatorioBasePage<T> extends StatefulWidget {
     required this.description,
     required this.filePrefix,
     required this.onGeneratePdf,
-    this.resumoLoader,
-    this.resumoBuilder,
     this.requiresDateRange = true,
   });
 
   @override
-  State<_RelatorioBasePage<T>> createState() => _RelatorioBasePageState<T>();
+  State<_RelatorioBasePage> createState() => _RelatorioBasePageState();
 }
 
-class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
+class _RelatorioBasePageState extends State<_RelatorioBasePage> {
   final DateFormat _apiDate = DateFormat('yyyy-MM-dd');
   DateTime? inicio;
   DateTime? fim;
   bool baixando = false;
-  bool carregandoResumo = false;
-  T? resumo;
-  String? erroResumo;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!widget.requiresDateRange) {
-      _buscarResumoSePossivel(forceNoDates: true);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -446,20 +422,6 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
                           ),
                         ),
                       ],
-                      if (widget.resumoBuilder != null) ...[
-                        const SizedBox(height: 16),
-                        if (carregandoResumo) const LinearProgressIndicator(minHeight: 3),
-                        if (erroResumo != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'Erro ao carregar resumo: $erroResumo',
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        if (resumo != null && widget.resumoBuilder != null)
-                          widget.resumoBuilder!(resumo as T),
-                      ],
                     ],
                   ),
                 ),
@@ -503,7 +465,6 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
           fim = selecionada;
         }
       });
-      _buscarResumoSePossivel();
     }
   }
 
@@ -515,7 +476,6 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
       inicio = start;
       fim = end;
     });
-    _buscarResumoSePossivel();
   }
 
   Future<void> _baixarPdf() async {
@@ -554,179 +514,8 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
     return true;
   }
 
-  Future<void> _buscarResumoSePossivel({bool forceNoDates = false}) async {
-    if (widget.resumoLoader == null) return;
-    if (widget.requiresDateRange) {
-      if (inicio == null || fim == null) return;
-      if (inicio!.isAfter(fim!)) return;
-    } else if (!forceNoDates && resumo != null) {
-      return;
-    }
-    setState(() {
-      carregandoResumo = true;
-      erroResumo = null;
-    });
-    try {
-      final ini = widget.requiresDateRange && inicio != null ? _apiDate.format(inicio!) : '';
-      final end = widget.requiresDateRange && fim != null ? _apiDate.format(fim!) : '';
-      final data = await widget.resumoLoader!(ini, end);
-      if (!mounted) return;
-      setState(() {
-        resumo = data;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        erroResumo = e.toString();
-        resumo = null;
-      });
-    } finally {
-      if (mounted) setState(() => carregandoResumo = false);
-    }
-  }
-
   void _mostrarAviso(String mensagem) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
-  }
-}
-
-class _LucroRealResumoView extends StatelessWidget {
-  final LucroRealData data;
-  const _LucroRealResumoView({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final df = DateFormat('dd/MM/yyyy');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Resumo ${df.format(data.dataInicio)} - ${df.format(data.dataFim)}',
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ResumoCard(title: 'Lucro liquido', value: _formatCurrency(data.lucroLiquido), icon: Icons.payments),
-            _ResumoCard(title: 'Lucro bruto', value: _formatCurrency(data.lucroBruto), icon: Icons.attach_money),
-            _ResumoCard(title: 'Despesas', value: _formatCurrency(data.despesas), icon: Icons.receipt_long),
-            _ResumoCard(title: 'Receita', value: _formatCurrency(data.totalVenda), icon: Icons.trending_up),
-            _ResumoCard(title: 'Compras', value: _formatCurrency(data.totalCompra), icon: Icons.shopping_cart_outlined),
-            _ResumoCard(title: 'Margem', value: _formatPercent(data.margemLucro), icon: Icons.percent),
-            _ResumoCard(title: 'Peso comprado', value: _formatKg(data.totalPesoComprado), icon: Icons.scale),
-            _ResumoCard(title: 'Peso vendido', value: _formatKg(data.totalPesoVendido), icon: Icons.monitor_weight),
-            _ResumoCard(title: 'Diferenca peso', value: _formatKg(data.diferencaPeso), icon: Icons.compare_arrows),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _LucroEsperadoResumoView extends StatelessWidget {
-  final LucroEsperadoData data;
-  const _LucroEsperadoResumoView({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Gerado em ${DateFormat('dd/MM/yyyy HH:mm').format(data.dataGeracao)}',
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ResumoCard(title: 'Lucro esperado', value: _formatCurrency(data.lucroEsperadoTotal), icon: Icons.ssid_chart),
-            _ResumoCard(title: 'Margem esperada', value: _formatPercent(data.margemEsperadaTotal), icon: Icons.percent),
-            _ResumoCard(title: 'Valor de venda', value: _formatCurrency(data.valorVendaTotal), icon: Icons.trending_up),
-            _ResumoCard(title: 'Custo', value: _formatCurrency(data.valorCustoTotal), icon: Icons.shopping_bag),
-            _ResumoCard(title: 'Materiais', value: '${data.quantidadeMateriais}', icon: Icons.inventory_2),
-            _ResumoCard(title: 'Mais rentavel', value: data.materialMaisRentavel, icon: Icons.arrow_upward),
-            _ResumoCard(title: 'Menos rentavel', value: data.materialMenosRentavel, icon: Icons.arrow_downward),
-            _ResumoCard(title: 'Maior lucro', value: data.materialMaiorLucro, icon: Icons.workspace_premium_outlined),
-            _ResumoCard(title: 'Maior prejuizo', value: data.materialMaiorPrejuizo, icon: Icons.warning_amber_rounded),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _MovimentacaoResumoView extends StatelessWidget {
-  final MovimentacaoData data;
-  const _MovimentacaoResumoView({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final df = DateFormat('dd/MM/yyyy');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Resumo ${df.format(data.dataInicio)} - ${df.format(data.dataFim)}',
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ResumoCard(title: 'Entradas (kg)', value: _formatKg(data.pesoTotalEntradas), icon: Icons.login),
-            _ResumoCard(title: 'Saidas (kg)', value: _formatKg(data.pesoTotalSaidas), icon: Icons.logout),
-            _ResumoCard(title: 'Valor entradas', value: _formatCurrency(data.valorTotalEntradas), icon: Icons.add_circle_outline),
-            _ResumoCard(title: 'Valor saidas', value: _formatCurrency(data.valorTotalSaidas), icon: Icons.remove_circle_outline),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ResumoCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-
-  const _ResumoCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 170,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: Colors.black87),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -788,20 +577,4 @@ class _RelatorioTipo {
     required this.descricao,
     required this.icone,
   });
-}
-
-String _formatCurrency(double? value) {
-  if (value == null) return 'N/D';
-  final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-  return currency.format(value);
-}
-
-String _formatKg(double? value) {
-  if (value == null) return 'N/D';
-  return '${value.toStringAsFixed(2)} kg';
-}
-
-String _formatPercent(double? value) {
-  if (value == null) return 'N/D';
-  return '${value.toStringAsFixed(2)}%';
 }
