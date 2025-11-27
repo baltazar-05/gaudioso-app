@@ -31,15 +31,27 @@ class EntradaLoteService {
         final data = jsonDecode(res.body) as List;
         return data.map((e) => LoteEntradaResumo.fromJson(e as Map<String, dynamic>)).toList();
       }
-      // Fallback para agregar localmente quando o endpoint ainda não existe/está com erro
+      // Fallback: agrega localmente quando o endpoint do lote falhar
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     } catch (_) {
-      // Fallback em caso de exceção de rede
+      // Fallback em exceção de rede
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     }
   }
 
   Future<List<Entrada>> itensDoLote(String numeroLote) async {
+    // Lote local (gerado pelo fallback)?
+    if (numeroLote.startsWith('local:ENT:')) {
+      final parsed = _parseLocalKey(numeroLote);
+      final todas = await EntradaService().listar();
+      return todas.where((e) {
+        final numLote = (e.numeroLote ?? '').trim();
+        if (numLote.isNotEmpty) return false;
+        final d = _parseDateTime(e.data);
+        return d != null && _bucketMinute(d).isAtSameMomentAs(parsed.bucket) && e.idFornecedor == parsed.parceiroId;
+      }).toList();
+    }
+
     var url = '$_base/${Uri.encodeComponent(numeroLote)}';
     try {
       var res = await http.get(Uri.parse(url));
@@ -62,6 +74,9 @@ class EntradaLoteService {
   }
 
   Future<void> renomear(String numeroAntigo, String numeroNovo) async {
+    if (numeroAntigo.startsWith('local:')) {
+      throw Exception('Operacao indisponivel para lotes locais');
+    }
     final url = '$_base/${Uri.encodeComponent(numeroAntigo)}';
     final res = await http.put(
       Uri.parse(url),
@@ -74,6 +89,9 @@ class EntradaLoteService {
   }
 
   Future<void> excluir(String numeroLote) async {
+    if (numeroLote.startsWith('local:')) {
+      throw Exception('Operacao indisponivel para lotes locais');
+    }
     final url = '$_base/${Uri.encodeComponent(numeroLote)}';
     final res = await http.delete(Uri.parse(url));
     if (res.statusCode == 200 || res.statusCode == 204) return;
@@ -94,11 +112,6 @@ class EntradaLoteService {
   // -------------------- Helpers (fallback local) --------------------
   Future<List<LoteEntradaResumo>> _listarFallback({DateTime? dia, DateTime? ini, DateTime? fim}) async {
     final entradas = await EntradaService().listar();
-    DateTime? parse(String s) {
-      final t = s.trim();
-      if (t.isEmpty) return null;
-      return DateTime.tryParse(t) ?? DateTime.tryParse(t.replaceAll(' ', 'T'));
-    }
     bool inRange(DateTime? d) {
       if (d == null) return false;
       if (dia != null) {
@@ -113,27 +126,30 @@ class EntradaLoteService {
       return true; // sem filtro
     }
 
+    // Agrupa por numeroLote quando existir; senão, por minuto + fornecedor (lote local)
     final groups = <String, List<Entrada>>{};
     for (final e in entradas) {
-      final lote = (e.numeroLote ?? '').trim();
-      if (lote.isEmpty) continue; // só lotes
-      final data = parse(e.data);
-      if (!inRange(data)) continue;
-      groups.putIfAbsent(lote, () => []).add(e);
+      final d = _parseDateTime(e.data);
+      if (!inRange(d)) continue;
+      final numLote = (e.numeroLote ?? '').trim();
+      final key = numLote.isNotEmpty
+          ? numLote
+          : _buildLocalKey(parceiroId: e.idFornecedor, bucket: _bucketMinute(d!));
+      groups.putIfAbsent(key, () => []).add(e);
     }
 
     final result = <LoteEntradaResumo>[];
-    groups.forEach((lote, list) {
+    groups.forEach((key, list) {
       final qtd = list.length;
       final peso = list.fold<double>(0, (acc, it) => acc + (it.peso));
       final valor = list.fold<double>(0, (acc, it) => acc + (it.peso * it.precoUnitario));
       DateTime? ultimo;
       for (final e in list) {
-        final d = parse(e.data);
+        final d = _parseDateTime(e.data);
         if (d != null && (ultimo == null || d.isAfter(ultimo!))) ultimo = d;
       }
       result.add(LoteEntradaResumo(
-        numeroLote: lote,
+        numeroLote: key,
         qtd: qtd,
         pesoTotal: double.parse(peso.toStringAsFixed(3)),
         valorTotal: double.parse(valor.toStringAsFixed(2)),
@@ -141,7 +157,6 @@ class EntradaLoteService {
       ));
     });
 
-    // Ordena por último registro desc
     result.sort((a, b) {
       final ad = a.ultimoRegistro ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bd = b.ultimoRegistro ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -149,4 +164,41 @@ class EntradaLoteService {
     });
     return result;
   }
+
+  // Helpers para lotes locais
+  DateTime? _parseDateTime(String s) {
+    final t = s.trim();
+    if (t.isEmpty) return null;
+    return DateTime.tryParse(t) ?? DateTime.tryParse(t.replaceAll(' ', 'T'));
+  }
+
+  DateTime _bucketMinute(DateTime d) => DateTime(d.year, d.month, d.day, d.hour, d.minute);
+
+  String _buildLocalKey({required int parceiroId, required DateTime bucket}) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final ts = '${bucket.year}${two(bucket.month)}${two(bucket.day)}${two(bucket.hour)}${two(bucket.minute)}';
+    return 'local:ENT:$ts:FOR$parceiroId';
+  }
+
+  _LocalKey _parseLocalKey(String key) {
+    try {
+      final parts = key.split(':');
+      final ts = parts[2];
+      final y = int.parse(ts.substring(0, 4));
+      final m = int.parse(ts.substring(4, 6));
+      final d = int.parse(ts.substring(6, 8));
+      final hh = int.parse(ts.substring(8, 10));
+      final mm = int.parse(ts.substring(10, 12));
+      final parceiroId = int.parse(parts[3].replaceFirst('FOR', ''));
+      return _LocalKey(DateTime(y, m, d, hh, mm), parceiroId);
+    } catch (_) {
+      return _LocalKey(DateTime.fromMillisecondsSinceEpoch(0), -1);
+    }
+  }
+}
+
+class _LocalKey {
+  final DateTime bucket;
+  final int parceiroId;
+  _LocalKey(this.bucket, this.parceiroId);
 }

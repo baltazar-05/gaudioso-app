@@ -10,23 +10,34 @@ class FluxoLotesScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        body: Column(
-          children: const [
-            SizedBox(height: 8),
-            TabBar(
-              tabs: [
-                Tab(text: 'Entradas'),
-                Tab(text: 'Saídas'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  FluxoLotesEntradasScreen(),
-                  FluxoLotesSaidasScreen(),
-                ],
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: 0,
+          automaticallyImplyLeading: false,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
+          ),
+          bottom: const TabBar(
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(text: 'Entradas'),
+              Tab(text: 'Saídas'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            FluxoLotesEntradasScreen(),
+            FluxoLotesSaidasScreen(),
           ],
         ),
       ),

@@ -1,32 +1,283 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
-import '../models/relatorio.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'menu_screen.dart';
 import '../services/relatorio_service.dart';
 
-class RelatoriosScreen extends StatefulWidget {
-  const RelatoriosScreen({super.key});
+const _topBarGradient = LinearGradient(
+  colors: [Color(0xFF66BB6A), Color(0xFF2E7D32)],
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+);
 
-  @override
-  State<RelatoriosScreen> createState() => _RelatoriosScreenState();
+const _bodyGradient = LinearGradient(
+  colors: [Color(0xFF81C784), Color(0xFF66BB6A)],
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+);
+
+final ButtonStyle _outlineButtonStyle = OutlinedButton.styleFrom(
+  foregroundColor: Colors.black87,
+  side: const BorderSide(color: Colors.black54),
+  padding: const EdgeInsets.symmetric(vertical: 14),
+  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+);
+
+final ButtonStyle _primaryButtonStyle = ElevatedButton.styleFrom(
+  backgroundColor: Colors.white,
+  foregroundColor: Colors.black87,
+  side: const BorderSide(color: Color(0xFF2E7D32)),
+  minimumSize: const Size.fromHeight(48),
+  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+);
+
+PreferredSizeWidget _buildRelatorioAppBar(String title) {
+  return AppBar(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    centerTitle: true,
+    foregroundColor: Colors.black,
+    flexibleSpace: Container(
+      decoration: const BoxDecoration(gradient: _topBarGradient),
+    ),
+    title: Text(
+      title,
+      style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+    ),
+  );
 }
 
-class _RelatoriosScreenState extends State<RelatoriosScreen> {
-  final service = RelatorioService();
-  final _buscaCtrl = TextEditingController();
+Widget _relatorioBackground({required Widget child}) {
+  return Container(
+    decoration: const BoxDecoration(gradient: _bodyGradient),
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: child,
+      ),
+    ),
+  );
+}
 
-  List<Relatorio> relatorios = [];
-  List<Relatorio> filtrados = [];
-  bool carregando = false;
-
-  DateTime? inicio;
-  DateTime? fim;
+class _RelatorioPanel extends StatelessWidget {
+  final Widget child;
+  const _RelatorioPanel({required this.child});
 
   @override
-  void dispose() {
-    _buscaCtrl.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
   }
+}
+
+class _RelatorioBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final String username;
+  const _RelatorioBottomBar({required this.currentIndex, required this.username});
+
+  void _go(BuildContext context, int index) {
+    if (index == currentIndex) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => MenuScreen(username: username, initialIndex: index)),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inactive = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+    final active = Theme.of(context).colorScheme.primary;
+    Widget item(IconData icon, String label, int index) {
+      final selected = index == currentIndex;
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _go(context, index),
+        child: SizedBox(
+          width: 80,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: selected ? active : inactive, size: 22),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(fontSize: 11, color: selected ? active : inactive)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return BottomAppBar(
+      color: Colors.white,
+      elevation: 8,
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            item(Icons.home_outlined, 'Resumo', 0),
+            item(LucideIcons.arrowDownUp, 'Fluxo', 1),
+            item(LucideIcons.database, 'Estoque', 2),
+            item(LucideIcons.chartBar, 'Relatorios', 3),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RelatoriosScreen extends StatelessWidget {
+  final String username;
+  final bool hideBottomBar;
+  const RelatoriosScreen({super.key, required this.username, this.hideBottomBar = false});
+
+  static final _relatorios = [
+    _RelatorioTipo(
+      id: 'lucro_real',
+      titulo: 'Lucro Real',
+      descricao: 'Seleciona o periodo e gera o PDF completo.',
+      icone: Icons.assignment,
+    ),
+    _RelatorioTipo(
+      id: 'lucro_esperado',
+      titulo: 'Lucro Esperado',
+      descricao: 'Projecao do estoque atual no modelo HTML/PDF.',
+      icone: Icons.trending_up,
+    ),
+    _RelatorioTipo(
+      id: 'movimentacao_30',
+      titulo: 'Movimentacao',
+      descricao: 'Consulta o periodo para gerar o relatorio.',
+      icone: Icons.swap_vert_circle_outlined,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildRelatorioAppBar('Relatorios'),
+      bottomNavigationBar: hideBottomBar ? null : _RelatorioBottomBar(currentIndex: 3, username: username),
+      body: _relatorioBackground(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Escolha qual relatorio deseja gerar',
+                style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+            Expanded(
+              child: _RelatorioPanel(
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _relatorios.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) {
+                    final tipo = _relatorios[index];
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => _abrir(context, tipo),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(tipo.icone, color: Colors.black87),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tipo.titulo,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      tipo.descricao,
+                                      style: TextStyle(color: Colors.grey.shade700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: Colors.black87),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _abrir(BuildContext context, _RelatorioTipo tipo) {
+    Widget page;
+    switch (tipo.id) {
+      case 'lucro_real':
+        page = RelatorioLucroRealPage(username: username);
+        break;
+      case 'lucro_esperado':
+        page = RelatorioLucroEsperadoPage(username: username);
+        break;
+      case 'movimentacao_30':
+        page = RelatorioMovimentacaoPage(username: username);
+        break;
+      default:
+        page = RelatorioPlaceholderPage(titulo: tipo.titulo, username: username);
+    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+  }
+}
+
+class RelatorioLucroRealPage extends StatefulWidget {
+  final String username;
+  const RelatorioLucroRealPage({super.key, required this.username});
+
+  @override
+  State<RelatorioLucroRealPage> createState() => _RelatorioLucroRealPageState();
+}
+
+class _RelatorioLucroRealPageState extends State<RelatorioLucroRealPage> {
+  final RelatorioService service = RelatorioService();
+  DateTime? inicio;
+  DateTime? fim;
+  bool baixando = false;
 
   Future<void> _selecionarData(bool isInicio) async {
     final selecionada = await showDatePicker(
@@ -36,7 +287,6 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
       lastDate: DateTime(2100),
       locale: const Locale('pt', 'BR'),
     );
-
     if (selecionada != null && mounted) {
       setState(() {
         if (isInicio) {
@@ -48,453 +298,401 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     }
   }
 
-  Future<void> _gerarRelatorio({bool exibirAviso = true}) async {
+  Future<void> _baixarPdf() async {
     if (inicio == null || fim == null) {
-      if (exibirAviso) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Selecione o periodo de datas')),
-        );
-      }
+      _mostrarAviso('Selecione o periodo de datas.');
       return;
     }
-
-    setState(() => carregando = true);
-
+    setState(() => baixando = true);
     try {
       final dataInicio = DateFormat('yyyy-MM-dd').format(inicio!);
       final dataFim = DateFormat('yyyy-MM-dd').format(fim!);
-
-      final dados = await service.gerar(dataInicio, dataFim);
+      final bytes = await service.gerarPdf(dataInicio, dataFim, usuario: widget.username);
+      final dir = await getTemporaryDirectory();
+      final arquivo = File(
+        "${dir.path}/Relatorio_Lucro_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf",
+      );
+      await arquivo.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
-      setState(() {
-        relatorios = dados;
-        filtrados = _filtrar(_buscaCtrl.text, dados);
-        carregando = false;
-      });
+      _mostrarAviso('PDF salvo em ${arquivo.path}');
+      await OpenFilex.open(arquivo.path);
     } catch (e) {
       if (!mounted) return;
-      setState(() => carregando = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      _mostrarAviso('Erro ao gerar PDF: $e');
+    } finally {
+      if (mounted) setState(() => baixando = false);
     }
   }
 
-  void _aplicarFiltro(String termo) {
-    setState(() {
-      filtrados = _filtrar(termo, relatorios);
-    });
-  }
-
-  List<Relatorio> _filtrar(String termo, List<Relatorio> base) {
-    final query = termo.trim().toLowerCase();
-    if (query.isEmpty) return List<Relatorio>.from(base);
-    return base.where((r) => r.matches(query)).toList();
-  }
-
-  Future<void> _refresh() => _gerarRelatorio(exibirAviso: false);
-
-  String _formatDate(DateTime? value) {
-    if (value == null) return '--';
-    return DateFormat('dd/MM/yyyy').format(value);
-  }
-
-  String _formatPeso(double? value) {
-    if (value == null) return '--';
-    return '${value.toStringAsFixed(2)} kg';
-  }
-
-  String _formatCurrency(NumberFormat currency, double? value) {
-    if (value == null) return '--';
-    return currency.format(value);
+  void _mostrarAviso(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bg = Theme.of(context).scaffoldBackgroundColor;
-    final cardColor = scheme.surface;
-    final accent = scheme.onSurface;
-    final buttonColor = scheme.tertiary;
-    final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final subtitleStyle = const TextStyle(color: Colors.black87, fontSize: 13);
-
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: accent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-        title: const Text('Relatorios'),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF81C784), Color(0xFF4CAF50)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-            Row(
+      appBar: _buildRelatorioAppBar('Lucro Real'),
+      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: widget.username),
+      body: _relatorioBackground(
+        child: _RelatorioPanel(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _selecionarData(true),
-                    icon: Icon(Icons.date_range, color: accent),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: accent,
-                      side: const BorderSide(color: Colors.black54),
-                      backgroundColor: Colors.green.shade50,
-                    ),
-                    label: Text(
-                      inicio == null
-                          ? 'Data inicio'
-                          : DateFormat('dd/MM/yyyy').format(inicio!),
-                    ),
-                  ),
+                const Text(
+                  'Selecione o periodo para gerar o relatorio no padrao HTML.',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _selecionarData(false),
-                    icon: Icon(Icons.date_range, color: accent),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: accent,
-                      side: const BorderSide(color: Colors.black54),
-                      backgroundColor: Colors.green.shade50,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(true),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(
+                          inicio == null ? 'Data inicio' : DateFormat('dd/MM/yyyy').format(inicio!),
+                        ),
+                      ),
                     ),
-                    label: Text(
-                      fim == null
-                          ? 'Data fim'
-                          : DateFormat('dd/MM/yyyy').format(fim!),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(false),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(fim == null ? 'Data fim' : DateFormat('dd/MM/yyyy').format(fim!)),
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  style: _primaryButtonStyle,
+                  onPressed: baixando ? null : _baixarPdf,
+                  icon: baixando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                          ),
+                        )
+                      : const Icon(Icons.picture_as_pdf, color: Colors.black87),
+                  label: Text(baixando ? 'Gerando PDF...' : 'Gerar relatorio'),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _gerarRelatorio,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buttonColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              icon: const Icon(Icons.bar_chart),
-              label: const Text('Gerar relatorio'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _buscaCtrl,
-              onChanged: _aplicarFiltro,
-              style: TextStyle(color: accent),
-              decoration: InputDecoration(
-                hintText: 'Buscar por lote, responsavel ou material',
-                hintStyle: TextStyle(color: accent.withValues(alpha: 0.54)),
-                prefixIcon: Icon(Icons.search, color: accent),
-                filled: true,
-                fillColor: cardColor,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: accent.withValues(alpha: 0.54)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RelatorioLucroEsperadoPage extends StatefulWidget {
+  final String username;
+  const RelatorioLucroEsperadoPage({super.key, required this.username});
+
+  @override
+  State<RelatorioLucroEsperadoPage> createState() => _RelatorioLucroEsperadoPageState();
+}
+
+class _RelatorioLucroEsperadoPageState extends State<RelatorioLucroEsperadoPage> {
+  final RelatorioService service = RelatorioService();
+  DateTime? inicio;
+  DateTime? fim;
+  bool baixando = false;
+
+  Future<void> _selecionarData(bool isInicio) async {
+    final selecionada = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (selecionada != null && mounted) {
+      setState(() {
+        if (isInicio) {
+          inicio = selecionada;
+        } else {
+          fim = selecionada;
+        }
+      });
+    }
+  }
+
+  Future<void> _baixar() async {
+    if (inicio == null || fim == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione o periodo (inicio e fim).')),
+      );
+      return;
+    }
+    setState(() => baixando = true);
+    try {
+      final dataInicio = DateFormat('yyyy-MM-dd').format(inicio!);
+      final dataFim = DateFormat('yyyy-MM-dd').format(fim!);
+      final bytes = await service.gerarLucroEsperadoPdf(
+        usuario: widget.username,
+        dataInicio: dataInicio,
+        dataFim: dataFim,
+      );
+      final dir = await getTemporaryDirectory();
+      final arquivo = File(
+        "${dir.path}/Relatorio_Lucro_Esperado_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf",
+      );
+      await arquivo.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF salvo em ${arquivo.path}')),
+      );
+      await OpenFilex.open(arquivo.path);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao gerar PDF: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => baixando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildRelatorioAppBar('Lucro Esperado'),
+      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: widget.username),
+      body: _relatorioBackground(
+        child: _RelatorioPanel(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Escolha o periodo e gere o relatorio de lucro esperado do estoque.',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: scheme.primary),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: carregando
-                  ? const Center(child: CircularProgressIndicator())
-                  : RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: filtrados.isEmpty
-                          ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              children: const [
-                                SizedBox(height: 120),
-                                Center(
-                                  child: Text(
-                                    'Nenhum lote encontrado',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              itemCount: filtrados.length,
-                              itemBuilder: (_, i) {
-                                final r = filtrados[i];
-                                final pesoTexto = _formatPeso(r.pesoCalculado);
-                                final valorTexto = _formatCurrency(
-                                  currency,
-                                  r.valorCalculado,
-                                );
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: cardColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Theme(
-                                    data: Theme.of(context).copyWith(
-                                      dividerColor: Colors.transparent,
-                                      splashColor: Colors.green.shade100
-                                          .withValues(alpha: 0.3),
-                                    ),
-                                    child: ExpansionTile(
-                                      tilePadding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
-                                      textColor: accent,
-                                      iconColor: accent,
-                                      collapsedIconColor: accent,
-                                      title: Text(
-                                        r.identificador,
-                                        style: TextStyle(
-                                          color: accent,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'Data: ${_formatDate(r.dataCadastro)}',
-                                            style: subtitleStyle,
-                                          ),
-                                          Text(
-                                            'Peso total: $pesoTexto  |  Valor total: $valorTexto',
-                                            style: subtitleStyle,
-                                          ),
-                                          if (r.cadastradoPor != null)
-                                            Text(
-                                              'Cadastrado por: ${r.cadastradoPor}',
-                                              style: subtitleStyle,
-                                            ),
-                                        ],
-                                      ),
-                                      childrenPadding:
-                                          const EdgeInsets.fromLTRB(
-                                            16,
-                                            0,
-                                            16,
-                                            16,
-                                          ),
-                                      children: [
-                                        _InfoRow(
-                                          titulo: 'Fornecedor',
-                                          valor: r.fornecedor ?? '--',
-                                        ),
-                                        _InfoRow(
-                                          titulo: 'Saldo do periodo',
-                                          valor: r.saldo != null
-                                              ? '${r.saldo!.toStringAsFixed(2)} kg'
-                                              : '--',
-                                        ),
-                                        if (r.totalEntradas != null ||
-                                            r.totalSaidas != null) ...[
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            'Resumo de movimentacao',
-                                            style: TextStyle(
-                                              color: accent,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          if (r.totalEntradas != null)
-                                            _InfoRow(
-                                              titulo: 'Entradas',
-                                              valor:
-                                                  '${r.totalEntradas!.toStringAsFixed(2)} kg',
-                                            ),
-                                          if (r.totalSaidas != null)
-                                            _InfoRow(
-                                              titulo: 'Saidas',
-                                              valor:
-                                                  '${r.totalSaidas!.toStringAsFixed(2)} kg',
-                                            ),
-                                        ],
-                                        if (r.observacao != null &&
-                                            r.observacao!.isNotEmpty) ...[
-                                          const SizedBox(height: 12),
-                                          Text(
-                                            'Observacoes',
-                                            style: TextStyle(
-                                              color: accent,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            r.observacao!,
-                                            style: TextStyle(
-                                              color: accent.withValues(alpha: 0.87),
-                                            ),
-                                          ),
-                                        ],
-                                        const SizedBox(height: 12),
-                                        if (r.itens.isEmpty)
-                                          const Text(
-                                            'Nao ha itens cadastrados para este lote.',
-                                            style: TextStyle(
-                                              color: Colors.black87,
-                                            ),
-                                          )
-                                        else
-                                          Column(
-                                            children: r.itens
-                                                .map(
-                                                  (item) => _LoteItemCard(
-                                                    item: item,
-                                                    currency: currency,
-                                                  ),
-                                                )
-                                                .toList(),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(true),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(
+                          inicio == null ? 'Data inicio' : DateFormat('dd/MM/yyyy').format(inicio!),
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(false),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(fim == null ? 'Data fim' : DateFormat('dd/MM/yyyy').format(fim!)),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  style: _primaryButtonStyle,
+                  onPressed: baixando ? null : _baixar,
+                  icon: baixando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                          ),
+                        )
+                      : const Icon(Icons.picture_as_pdf, color: Colors.black87),
+                  label: Text(baixando ? 'Gerando PDF...' : 'Gerar relatorio'),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
+class RelatorioMovimentacaoPage extends StatefulWidget {
+  final String username;
+  const RelatorioMovimentacaoPage({super.key, required this.username});
+
+  @override
+  State<RelatorioMovimentacaoPage> createState() => _RelatorioMovimentacaoPageState();
+}
+
+class _RelatorioMovimentacaoPageState extends State<RelatorioMovimentacaoPage> {
+  final RelatorioService service = RelatorioService();
+  DateTime? inicio;
+  DateTime? fim;
+  bool baixando = false;
+
+  Future<void> _selecionarData(bool isInicio) async {
+    final selecionada = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (selecionada != null && mounted) {
+      setState(() {
+        if (isInicio) {
+          inicio = selecionada;
+        } else {
+          fim = selecionada;
+        }
+      });
+    }
+  }
+
+  Future<void> _baixarPdf() async {
+    if (inicio == null || fim == null) {
+      _mostrarAviso('Selecione as datas de inicio e fim.');
+      return;
+    }
+    setState(() => baixando = true);
+    try {
+      final dataInicio = DateFormat('yyyy-MM-dd').format(inicio!);
+      final dataFim = DateFormat('yyyy-MM-dd').format(fim!);
+      final bytes = await service.gerarMovimentacaoPdf(dataInicio, dataFim);
+      final dir = await getTemporaryDirectory();
+      final arquivo = File(
+        "${dir.path}/Relatorio_Movimentacao_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf",
+      );
+      await arquivo.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      _mostrarAviso('PDF salvo em ${arquivo.path}');
+      await OpenFilex.open(arquivo.path);
+    } catch (e) {
+      if (!mounted) return;
+      _mostrarAviso('Erro ao gerar PDF: $e');
+    } finally {
+      if (mounted) setState(() => baixando = false);
+    }
+  }
+
+  void _mostrarAviso(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildRelatorioAppBar('Movimentacao'),
+      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: widget.username),
+      body: _relatorioBackground(
+        child: _RelatorioPanel(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Selecione o periodo desejado e gere o relatorio consolidado de movimentacoes.',
+                  style: TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(true),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(
+                          inicio == null ? 'Data inicio' : DateFormat('dd/MM/yyyy').format(inicio!),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: _outlineButtonStyle,
+                        onPressed: () => _selecionarData(false),
+                        icon: const Icon(Icons.date_range, color: Colors.black87),
+                        label: Text(fim == null ? 'Data fim' : DateFormat('dd/MM/yyyy').format(fim!)),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  style: _primaryButtonStyle,
+                  onPressed: baixando ? null : _baixarPdf,
+                  icon: baixando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                          ),
+                        )
+                      : const Icon(Icons.picture_as_pdf, color: Colors.black87),
+                  label: Text(baixando ? 'Gerando PDF...' : 'Gerar relatorio'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RelatorioPlaceholderPage extends StatelessWidget {
   final String titulo;
-  final String valor;
-
-  const _InfoRow({required this.titulo, required this.valor});
+  final String username;
+  const RelatorioPlaceholderPage({super.key, required this.titulo, required this.username});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$titulo: ',
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
+    return Scaffold(
+      appBar: _buildRelatorioAppBar(titulo),
+      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: username),
+      body: _relatorioBackground(
+        child: _RelatorioPanel(
+          child: const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Este relatorio estara disponivel em breve.',
+                style: TextStyle(fontSize: 16, color: Colors.black87),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
-          Expanded(
-            child: Text(valor, style: const TextStyle(color: Colors.black87)),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _LoteItemCard extends StatelessWidget {
-  final RelatorioItem item;
-  final NumberFormat currency;
+class _RelatorioTipo {
+  final String id;
+  final String titulo;
+  final String descricao;
+  final IconData icone;
 
-  const _LoteItemCard({required this.item, required this.currency});
-
-  @override
-  Widget build(BuildContext context) {
-    final peso = item.peso ?? item.quantidade;
-    final valorUnitario = item.valorUnitario;
-    final valorTotal = item.valorTotal;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item.descricao,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 12,
-            runSpacing: 4,
-            children: [
-              if (item.quantidade != null &&
-                  (item.peso == null ||
-                      item.quantidade!.toStringAsFixed(2) !=
-                          item.peso!.toStringAsFixed(2)))
-                Text(
-                  'Qtd: ${item.quantidade!.toStringAsFixed(2)}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87)),
-                ),
-              if (peso != null)
-                Text(
-                  'Peso: ${peso.toStringAsFixed(2)} kg',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87)),
-                ),
-              if (valorUnitario != null)
-                Text(
-                  'Valor unit.: ${currency.format(valorUnitario)}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87)),
-                ),
-              if (valorTotal != null)
-                Text(
-                  'Valor total: ${currency.format(valorTotal)}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87)),
-                ),
-            ],
-          ),
-          if (item.observacao != null && item.observacao!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Obs: ${item.observacao}',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  const _RelatorioTipo({
+    required this.id,
+    required this.titulo,
+    required this.descricao,
+    required this.icone,
+  });
 }
-

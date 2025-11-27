@@ -22,7 +22,7 @@ import 'splash_screen.dart';
 import 'materiais_screen.dart';
 import 'profile/profile_screen.dart';
 import 'relatorios_screen.dart';
-import 'fluxo_movimentos_screen.dart';
+import 'fluxo_lotes_screen.dart';
 
 // Core brand colors (one-time constants)
 const kText = Color(0xFF1F2937);
@@ -55,9 +55,9 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       _ResumoTab(username: widget.username),
-      const FluxoMovimentosScreen(),
+      const FluxoLotesScreen(),
       const EstoqueScreen(),
-      const RelatoriosScreen(),
+      RelatoriosScreen(username: widget.username, hideBottomBar: true),
     ];
 
     return Scaffold(
