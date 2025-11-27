@@ -300,8 +300,8 @@ class RelatorioLucroEsperadoPage extends StatelessWidget {
       title: 'Lucro Esperado',
       description: 'Escolha o periodo e veja a projecao do estoque antes de gerar o PDF.',
       filePrefix: 'Relatorio_Lucro_Esperado',
-      onGeneratePdf: (ini, fim) =>
-          service.gerarLucroEsperadoPdf(usuario: username, dataInicio: ini, dataFim: fim),
+      requiresDateRange: false,
+      onGeneratePdf: (ini, fim) => service.gerarLucroEsperadoPdf(usuario: username, dataInicio: ini, dataFim: fim),
       resumoLoader: (_, __) => service.buscarLucroEsperadoResumo(usuario: username),
       resumoBuilder: (data) => _LucroEsperadoResumoView(data: data),
     );
@@ -335,6 +335,7 @@ class _RelatorioBasePage<T> extends StatefulWidget {
   final Future<Uint8List> Function(String dataInicio, String dataFim) onGeneratePdf;
   final Future<T> Function(String dataInicio, String dataFim)? resumoLoader;
   final Widget Function(T data)? resumoBuilder;
+  final bool requiresDateRange;
 
   const _RelatorioBasePage({
     required this.username,
@@ -344,6 +345,7 @@ class _RelatorioBasePage<T> extends StatefulWidget {
     required this.onGeneratePdf,
     this.resumoLoader,
     this.resumoBuilder,
+    this.requiresDateRange = true,
   });
 
   @override
@@ -358,6 +360,14 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
   bool carregandoResumo = false;
   T? resumo;
   String? erroResumo;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.requiresDateRange) {
+      _buscarResumoSePossivel(forceNoDates: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -377,41 +387,65 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
                         widget.description,
                         style: const TextStyle(fontSize: 14, color: Colors.black87),
                       ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _PresetButton(label: 'Ultimos 7 dias', onTap: () => _aplicarPreset(7)),
-                          _PresetButton(label: 'Ultimos 30 dias', onTap: () => _aplicarPreset(30)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: _outlineButtonStyle,
-                              onPressed: () => _selecionarData(true),
-                              icon: const Icon(Icons.date_range, color: Colors.black87),
-                              label: Text(
-                                inicio == null ? 'Data inicio' : DateFormat('dd/MM/yyyy').format(inicio!),
+                      if (widget.requiresDateRange) ...[
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _PresetButton(label: 'Ultimos 7 dias', onTap: () => _aplicarPreset(7)),
+                            _PresetButton(label: 'Ultimos 30 dias', onTap: () => _aplicarPreset(30)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: _outlineButtonStyle,
+                                onPressed: () => _selecionarData(true),
+                                icon: const Icon(Icons.date_range, color: Colors.black87),
+                                label: Text(
+                                  inicio == null ? 'Data inicio' : DateFormat('dd/MM/yyyy').format(inicio!),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: _outlineButtonStyle,
-                              onPressed: () => _selecionarData(false),
-                              icon: const Icon(Icons.date_range, color: Colors.black87),
-                              label: Text(
-                                fim == null ? 'Data fim' : DateFormat('dd/MM/yyyy').format(fim!),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: _outlineButtonStyle,
+                                onPressed: () => _selecionarData(false),
+                                icon: const Icon(Icons.date_range, color: Colors.black87),
+                                label: Text(
+                                  fim == null ? 'Data fim' : DateFormat('dd/MM/yyyy').format(fim!),
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.inventory_2_outlined, color: Colors.black87),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Relatorio baseado no estoque atual. Nao requer selecao de datas.',
+                                  style: TextStyle(color: Colors.black87),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (widget.resumoBuilder != null) ...[
                         const SizedBox(height: 16),
                         if (carregandoResumo) const LinearProgressIndicator(minHeight: 3),
@@ -488,8 +522,8 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
     if (!_rangeValido()) return;
     setState(() => baixando = true);
     try {
-      final ini = _apiDate.format(inicio!);
-      final end = _apiDate.format(fim!);
+      final ini = inicio != null ? _apiDate.format(inicio!) : '';
+      final end = fim != null ? _apiDate.format(fim!) : '';
       final bytes = await widget.onGeneratePdf(ini, end);
       final dir = await getTemporaryDirectory();
       final arquivo = File(
@@ -508,6 +542,7 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
   }
 
   bool _rangeValido() {
+    if (!widget.requiresDateRange) return true;
     if (inicio == null || fim == null) {
       _mostrarAviso('Selecione as datas de inicio e fim.');
       return false;
@@ -519,17 +554,21 @@ class _RelatorioBasePageState<T> extends State<_RelatorioBasePage<T>> {
     return true;
   }
 
-  Future<void> _buscarResumoSePossivel() async {
+  Future<void> _buscarResumoSePossivel({bool forceNoDates = false}) async {
     if (widget.resumoLoader == null) return;
-    if (inicio == null || fim == null) return;
-    if (inicio!.isAfter(fim!)) return;
+    if (widget.requiresDateRange) {
+      if (inicio == null || fim == null) return;
+      if (inicio!.isAfter(fim!)) return;
+    } else if (!forceNoDates && resumo != null) {
+      return;
+    }
     setState(() {
       carregandoResumo = true;
       erroResumo = null;
     });
     try {
-      final ini = _apiDate.format(inicio!);
-      final end = _apiDate.format(fim!);
+      final ini = widget.requiresDateRange && inicio != null ? _apiDate.format(inicio!) : '';
+      final end = widget.requiresDateRange && fim != null ? _apiDate.format(fim!) : '';
       final data = await widget.resumoLoader!(ini, end);
       if (!mounted) return;
       setState(() {
