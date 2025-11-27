@@ -1,65 +1,35 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:gaudioso_app/core/api_config.dart';
+import 'package:gaudioso_app/services/api_service.dart';
 import '../models/material.dart';
 
 class MaterialService {
-  static final baseUrl = ApiConfig.endpoint('/api/materiais');
-  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
-  // 👉 se rodar no celular físico, troque para seu IP local (ex: http://192.168.0.10:8080/api/materiais)
+  static const _path = '/api/materiais';
 
   Future<List<MaterialItem>> listar() async {
-    final res = await http.get(Uri.parse(baseUrl));
+    final body = await ApiService.getJson(_path);
 
-    if (res.statusCode == 200) {
-      final body = jsonDecode(res.body);
-
-      // Se a API retorna diretamente uma lista
-      if (body is List) {
-        return body.map((e) => MaterialItem.fromJson(e)).toList();
-      }
-
-      // Se a API retorna um objeto que contém a lista dentro de "content" ou "materiais"
-      if (body is Map) {
-        final data = body['content'] ?? body['materiais'] ?? [];
-        if (data is List) {
-          return data.map((e) => MaterialItem.fromJson(e)).toList();
-        }
-      }
-
-      throw Exception("Formato de resposta inesperado da API");
+    if (body is List) {
+      return body.map((e) => MaterialItem.fromJson(e)).toList();
     }
 
-    throw Exception("Erro ao listar materiais: ${res.statusCode}");
+    if (body is Map) {
+      final data = body['content'] ?? body['materiais'] ?? [];
+      if (data is List) {
+        return data.map((e) => MaterialItem.fromJson(e)).toList();
+      }
+    }
+
+    throw Exception("Formato de resposta inesperado da API");
   }
 
   Future<void> adicionar(MaterialItem m) async {
-    final res = await http.post(
-      Uri.parse(baseUrl),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(m.toJson()),
-    );
-    if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception("Erro ao adicionar material: ${res.statusCode}");
-    }
+    await ApiService.postJson(_path, m.toJson());
   }
 
   Future<void> atualizar(MaterialItem m) async {
-    final res = await http.put(
-      Uri.parse("$baseUrl/${m.id}"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(m.toJson()),
-    );
-    if (res.statusCode != 200) {
-      throw Exception("Erro ao atualizar material: ${res.statusCode}");
-    }
+    await ApiService.putJson('$_path/${m.id}', m.toJson());
   }
 
   Future<void> excluir(int id) async {
-    final res = await http.delete(Uri.parse("$baseUrl/$id"));
-    if (res.statusCode != 204 && res.statusCode != 200) {
-      throw Exception("Erro ao excluir material: ${res.statusCode}");
-    }
+    await ApiService.delete('$_path/$id');
   }
 }

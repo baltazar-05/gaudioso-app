@@ -1,10 +1,10 @@
 class MovimentacaoData {
   final DateTime dataInicio;
   final DateTime dataFim;
-  final double pesoTotalEntradas;
-  final double pesoTotalSaidas;
-  final double valorTotalEntradas;
-  final double valorTotalSaidas;
+  final double? pesoTotalEntradas;
+  final double? pesoTotalSaidas;
+  final double? valorTotalEntradas;
+  final double? valorTotalSaidas;
   final List<MovimentacaoMaterial> materiais;
 
   const MovimentacaoData({
@@ -34,10 +34,10 @@ class MovimentacaoData {
 
 class MovimentacaoMaterial {
   final String nome;
-  final double pesoEntradas;
-  final double pesoSaidas;
-  final double valorEntradas;
-  final double valorSaidas;
+  final double? pesoEntradas;
+  final double? pesoSaidas;
+  final double? valorEntradas;
+  final double? valorSaidas;
 
   const MovimentacaoMaterial({
     required this.nome,
@@ -57,12 +57,19 @@ class MovimentacaoMaterial {
     );
   }
 
-  double get saldoPeso => pesoEntradas - pesoSaidas;
-  double get saldoValor => valorEntradas - valorSaidas;
+  double? get saldoPeso {
+    if (pesoEntradas == null || pesoSaidas == null) return null;
+    return pesoEntradas! - pesoSaidas!;
+  }
+
+  double? get saldoValor {
+    if (valorEntradas == null || valorSaidas == null) return null;
+    return valorEntradas! - valorSaidas!;
+  }
 }
 
-double _toDouble(dynamic value) {
-  if (value == null) return 0;
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
   if (value is num) return value.toDouble();
-  return double.tryParse(value.toString()) ?? 0;
+  return double.tryParse(value.toString());
 }

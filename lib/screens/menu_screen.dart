@@ -137,6 +137,8 @@ class _ResumoTabState extends State<_ResumoTab> {
   bool _showEntradas = true;
   Timer? _timer;
   static const _toggleEvery = Duration(seconds: 5);
+  late final Future<List<dynamic>> _headlineFuture;
+  late final Future<List<dynamic>> _movimentosHojeFuture;
 
   @override
   void initState() {
@@ -145,6 +147,16 @@ class _ResumoTabState extends State<_ResumoTab> {
       if (!mounted) return;
       setState(() => _showEntradas = !_showEntradas);
     });
+    _headlineFuture = Future.wait([
+      EntradaService().listar(),
+      SaidaService().listar(),
+      ClienteService().listar(),
+      FornecedorService().listar(),
+    ]);
+    _movimentosHojeFuture = Future.wait([
+      EntradaService().listar(),
+      SaidaService().listar(),
+    ]);
   }
 
   @override
@@ -196,12 +208,7 @@ class _ResumoTabState extends State<_ResumoTab> {
               ),
               // Texto fixo (substitui o antigo ticker)
               FutureBuilder<List<dynamic>>(
-                future: Future.wait([
-                  EntradaService().listar(),
-                  SaidaService().listar(),
-                  ClienteService().listar(),
-                  FornecedorService().listar(),
-                ]),
+                future: _headlineFuture,
                 builder: (context, snap) {
                   final scheme = Theme.of(context).colorScheme;
                   final on = Colors.black;
@@ -313,10 +320,7 @@ class _ResumoTabState extends State<_ResumoTab> {
                 },
               ),
               FutureBuilder<List<dynamic>>(
-                future: Future.wait([
-                  EntradaService().listar(),
-                  SaidaService().listar(),
-                ]),
+                future: _movimentosHojeFuture,
                 builder: (context, snap) {
                   double pesoEntradas = 0, valorEntradas = 0;
                   double pesoSaidas = 0, valorSaidas = 0;

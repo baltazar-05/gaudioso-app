@@ -1,47 +1,33 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:gaudioso_app/core/api_config.dart';
+import 'package:gaudioso_app/services/api_service.dart';
 import '../models/lote_saida_resumo.dart';
 import '../models/saida.dart';
 import 'saida_service.dart';
 
 class SaidaLoteService {
-  static final _base = ApiConfig.endpoint('/api/saidas/lotes');
+  static const _path = '/api/saidas/lotes';
 
   Future<List<LoteSaidaResumo>> listar({DateTime? dia, DateTime? ini, DateTime? fim}) async {
     final params = <String, String>{};
     if (dia != null) {
-      final y = dia.year.toString().padLeft(4, '0');
-      final m = dia.month.toString().padLeft(2, '0');
-      final d = dia.day.toString().padLeft(2, '0');
-      params['dia'] = '$y-$m-$d';
+      params['dia'] = _dateOnly(dia);
     } else if (ini != null && fim != null) {
-      // Normaliza para inicio do dia e fim do dia (inclusive)
       final i = DateTime(ini.year, ini.month, ini.day, 0, 0, 0);
       final f = DateTime(fim.year, fim.month, fim.day, 23, 59, 59, 999);
       params['ini'] = i.toIso8601String();
       params['fim'] = f.toIso8601String();
     }
-    final url = params.isEmpty
-        ? _base
-        : '$_base?${params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
     try {
-      final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
+      final data = await ApiService.getJson(_path, query: params);
+      if (data is List) {
         return data.map((e) => LoteSaidaResumo.fromJson(e as Map<String, dynamic>)).toList();
       }
-      // Fallback: agrega localmente a partir de /api/saidas
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     } catch (_) {
-      // Fallback em exceção de rede
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     }
   }
 
   Future<List<Saida>> itensDoLote(String numeroLote) async {
-    // Lote local (gerado pelo fallback)?
     if (numeroLote.startsWith('local:SAI:')) {
       final parsed = _parseLocalKey(numeroLote);
       final todas = await SaidaService().listar();
@@ -53,25 +39,24 @@ class SaidaLoteService {
       }).toList();
     }
 
-    // Endpoint preferencial
-    var url = '$_base/${Uri.encodeComponent(numeroLote)}';
     try {
-      var res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
-        return data.map((e) => Saida.fromJson(e)).toList();
-      }
-      // Fallback compatível
-      url = ApiConfig.endpoint('/api/saidas?lote=${Uri.encodeQueryComponent(numeroLote)}');
-      res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
+      final data = await ApiService.getJson('$_path/${Uri.encodeComponent(numeroLote)}');
+      if (data is List) {
         return data.map((e) => Saida.fromJson(e)).toList();
       }
     } catch (_) {
-      // cai no fallback local
+      // tenta endpoint alternativo
     }
-    // Fallback local: lista todas as saídas e filtra pelo lote
+
+    try {
+      final data = await ApiService.getJson('/api/saidas', query: {'lote': numeroLote});
+      if (data is List) {
+        return data.map((e) => Saida.fromJson(e)).toList();
+      }
+    } catch (_) {
+      // fallback local
+    }
+
     final todas = await SaidaService().listar();
     return todas.where((s) => (s.numeroLote ?? '').trim() == numeroLote).toList();
   }
@@ -80,25 +65,22 @@ class SaidaLoteService {
     if (numeroAntigo.startsWith('local:')) {
       throw Exception('Operacao indisponivel para lotes locais');
     }
-    final url = '$_base/${Uri.encodeComponent(numeroAntigo)}';
-    final res = await http.put(
-      Uri.parse(url),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"novoNumeroLote": numeroNovo}),
+    await ApiService.putJson(
+      '$_path/${Uri.encodeComponent(numeroAntigo)}',
+      {"novoNumeroLote": numeroNovo},
     );
-    if (res.statusCode != 200 && res.statusCode != 204) {
-      throw Exception('Erro ao renomear lote: HTTP ${res.statusCode} - ${res.body}');
-    }
   }
 
   Future<void> excluir(String numeroLote) async {
     if (numeroLote.startsWith('local:')) {
       throw Exception('Operacao indisponivel para lotes locais');
     }
-    final url = '$_base/${Uri.encodeComponent(numeroLote)}';
-    final res = await http.delete(Uri.parse(url));
-    if (res.statusCode == 200 || res.statusCode == 204) return;
-    // Fallback: excluir item a item quando o endpoint do lote falhar
+    try {
+      await ApiService.delete('$_path/${Uri.encodeComponent(numeroLote)}');
+      return;
+    } catch (_) {
+      // segue para fallback item a item
+    }
     try {
       final itens = await itensDoLote(numeroLote);
       final saidaService = SaidaService();
@@ -108,7 +90,7 @@ class SaidaLoteService {
         }
       }
     } catch (e) {
-      throw Exception('Erro ao excluir lote (fallback itens): $e | HTTP ${res.statusCode} - ${res.body}');
+      throw Exception('Erro ao excluir lote (fallback itens): $e');
     }
   }
 
@@ -172,6 +154,13 @@ class SaidaLoteService {
     return result;
   }
 
+  String _dateOnly(DateTime d) {
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
+  }
+
   // Helpers para lotes locais
   DateTime _bucketMinute(DateTime d) => DateTime(d.year, d.month, d.day, d.hour, d.minute);
   String _buildLocalKey({required int parceiroId, required DateTime bucket}) {
@@ -179,6 +168,7 @@ class SaidaLoteService {
     final ts = '${bucket.year}${two(bucket.month)}${two(bucket.day)}${two(bucket.hour)}${two(bucket.minute)}';
     return 'local:SAI:$ts:CLI$parceiroId';
   }
+
   _LocalKey _parseLocalKey(String key) {
     try {
       final parts = key.split(':');
