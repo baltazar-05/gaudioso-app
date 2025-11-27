@@ -4,9 +4,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/lote_entrada_resumo.dart';
 import '../models/entrada.dart';
+import '../models/material.dart' as mdl;
+import '../models/fornecedor.dart';
 import '../services/entrada_lote_service.dart';
 import '../services/material_service.dart';
 import '../services/entrada_service.dart';
+import '../services/fornecedor_service.dart';
 import 'forms/entrada_form_screen.dart';
 
 class FluxoLotesEntradasScreen extends StatefulWidget {
@@ -20,6 +23,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
   final _service = EntradaLoteService();
   final _materialService = MaterialService();
   final _entradaService = EntradaService();
+  final _fornecedorService = FornecedorService();
 
   DateTime? inicio;
   DateTime? fim;
@@ -30,6 +34,22 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
   final Map<String, List<Entrada>> itensPorLote = {};
   final Map<String, bool> carregandoItens = {};
   Map<int, String> materialNomes = {};
+  Map<int, String> fornecedorNomes = {};
+
+  bool _isLocalLote(String n) => n.startsWith('local:');
+  String _displayLote(String n) {
+    if (!_isLocalLote(n)) return n;
+    try {
+      // local:ENT:yyyyMMddHHmm:FOR<id>
+      final parts = n.split(':');
+      final pidStr = parts[3].replaceFirst('FOR', '');
+      final id = int.tryParse(pidStr);
+      if (id != null) {
+        return fornecedorNomes[id] ?? 'Fornecedor';
+      }
+    } catch (_) {}
+    return 'Fornecedor';
+  }
 
   @override
   void initState() {
@@ -42,10 +62,17 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
 
   Future<void> _carregarMateriais() async {
     try {
-      final mats = await _materialService.listar();
+      final results = await Future.wait([
+        _materialService.listar(),
+        _fornecedorService.listar(),
+      ]);
+      final mats = results[0] as List<mdl.MaterialItem>;
+      final fornecedores = results[1] as List<Fornecedor>;
       materialNomes = { for (final m in mats) if (m.id != null) m.id!: m.nome };
+      fornecedorNomes = { for (final f in fornecedores) if (f.id != null) f.id!: f.nome };
     } catch (_) {
       materialNomes = {};
+      fornecedorNomes = {};
     }
   }
 
@@ -194,21 +221,6 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: accent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-        title: const Text('Fluxo - Lotes de entradas'),
-      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -226,7 +238,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _selecionarData(true),
-                      icon: Icon(Icons.date_range, color: accent),
+                      icon: Icon(LucideIcons.calendar, color: accent),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: accent,
                         side: const BorderSide(color: Colors.black54),
@@ -239,7 +251,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _selecionarData(false),
-                      icon: Icon(Icons.date_range, color: accent),
+                      icon: Icon(LucideIcons.calendar, color: accent),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: accent,
                         side: const BorderSide(color: Colors.black54),
@@ -257,7 +269,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: carregando ? null : _carregar,
-                  icon: const Icon(Icons.search),
+                  icon: const Icon(LucideIcons.search),
                   label: const Text('Buscar'),
                 ),
               ),
@@ -296,8 +308,12 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                                 textColor: accent,
                                 iconColor: accent,
                                 collapsedIconColor: accent,
+                                leading: CircleAvatar(
+                                  backgroundColor: const Color(0xFF4CAF50),
+                                  child: Icon(LucideIcons.arrowDown, color: Colors.white, size: 18),
+                                ),
                                 title: Text(
-                                  l.numeroLote,
+                                  _displayLote(l.numeroLote),
                                   style: TextStyle(color: accent, fontSize: 18, fontWeight: FontWeight.w700),
                                 ),
                                 subtitle: Wrap(
@@ -311,18 +327,33 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                                     Text('Entrada: $ultimo', style: TextStyle(color: accent.withValues(alpha: 0.87))),
                                   ],
                                 ),
-                                trailing: PopupMenuButton<String>(
-                                  tooltip: 'Mais',
-                                  onSelected: (v) {
-                                    if (v == 'renomear') {
-                                      _renomear(l.numeroLote);
-                                    } else if (v == 'excluir') {
-                                      _excluir(l.numeroLote);
-                                    }
-                                  },
-                                  itemBuilder: (_) => const [
-                                    PopupMenuItem(value: 'renomear', child: Text('Renomear lote')),
-                                    PopupMenuItem(value: 'excluir', child: Text('Excluir lote')),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Editar lote',
+                                      icon: Icon(LucideIcons.pencil, color: accent),
+                                      onPressed: _isLocalLote(l.numeroLote)
+                                          ? null
+                                          : () async {
+                                              final mudou = await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => _EditarLoteEntradaScreen(numeroLote: l.numeroLote),
+                                                ),
+                                              );
+                                              if (mudou == true) {
+                                                await _carregarItens(l.numeroLote);
+                                                await _carregar();
+                                              }
+                                            },
+                                    ),
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      tooltip: 'Excluir lote',
+                                      icon: const Icon(LucideIcons.trash2, color: Color(0xFFE53935)),
+                                      onPressed: _isLocalLote(l.numeroLote) ? null : () => _excluir(l.numeroLote),
+                                    ),
                                   ],
                                 ),
                                 onExpansionChanged: (open) {
@@ -363,7 +394,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 6),
         child: ListTile(
-          leading: CircleAvatar(backgroundColor: const Color(0xFF4CAF50), child: Icon(LucideIcons.recycle, color: Colors.white, size: 18)),
+          leading: CircleAvatar(backgroundColor: const Color(0xFF4CAF50), child: Icon(LucideIcons.box, color: Colors.white, size: 18)),
           title: Text(mat),
           subtitle: Text('Peso: ${e.peso.toStringAsFixed(2)} kg  •  Unit: ${currency.format(e.precoUnitario)}  •  Total: ${currency.format(valor)}'),
           onTap: () async {
@@ -377,7 +408,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
             }
           },
           trailing: IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(LucideIcons.trash2),
             onPressed: () async {
               if (e.id == null) return;
               final ok = await showDialog<bool>(
@@ -401,5 +432,327 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
         ),
       );
     }).toList();
+  }
+}
+
+// ====================== Tela de edição de conteúdo do lote (Entradas) ======================
+class _EditarLoteEntradaScreen extends StatefulWidget {
+  final String numeroLote;
+  const _EditarLoteEntradaScreen({required this.numeroLote});
+
+  @override
+  State<_EditarLoteEntradaScreen> createState() => _EditarLoteEntradaScreenState();
+}
+
+class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
+  final _service = EntradaLoteService();
+  final _entradaService = EntradaService();
+  final _materialService = MaterialService();
+  final _fornecedorService = FornecedorService();
+
+  bool carregando = true;
+  bool mudou = false;
+  String? erro;
+  List<Entrada> itens = [];
+  List<mdl.MaterialItem> materiais = [];
+  List<Fornecedor> fornecedores = [];
+
+  List<double> _parsePesos(String text) {
+    final norm = text.replaceAll(',', '.');
+    final parts = norm.split(RegExp(r"[+;,\s]+"));
+    final out = <double>[];
+    for (final p in parts) {
+      final t = p.trim();
+      if (t.isEmpty) continue;
+      final v = double.tryParse(t);
+      if (v != null && v > 0) out.add(v);
+    }
+    return out;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() { carregando = true; erro = null; });
+    try {
+      final results = await Future.wait([
+        _service.itensDoLote(widget.numeroLote),
+        _materialService.listar(),
+        _fornecedorService.listar(),
+      ]);
+      setState(() {
+        itens = results[0] as List<Entrada>;
+        materiais = (results[1] as List<mdl.MaterialItem>)..sort((a,b)=>a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        fornecedores = (results[2] as List<Fornecedor>)..sort((a,b)=>a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+      });
+    } catch (e) {
+      setState(() { erro = e.toString(); });
+    } finally {
+      setState(() { carregando = false; });
+    }
+  }
+
+  int? _loteFornecedorId() => itens.isNotEmpty ? itens.first.idFornecedor : null;
+
+  Future<void> _excluirItem(Entrada e) async {
+    if (e.id == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Excluir item'),
+        content: const Text('Deseja remover este item do lote?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _entradaService.excluir(e.id!);
+      setState(() { itens.removeWhere((x) => x.id == e.id); mudou = true; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item excluido')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+    }
+  }
+
+  Future<void> _editarItem(Entrada e) async {
+    final materialAtual = materiais.firstWhere((m) => m.id == e.idMaterial, orElse: () => materiais.first);
+    final initialPesos = (e.pesosJson.isNotEmpty)
+        ? e.pesosJson.map((v) => v.toStringAsFixed(2)).join(' + ')
+        : e.peso.toStringAsFixed(2);
+    final pesoCtrl = TextEditingController(text: initialPesos);
+    final precoCtrl = TextEditingController(text: e.precoUnitario.toStringAsFixed(2));
+    mdl.MaterialItem? matSel = materialAtual;
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Editar item', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<mdl.MaterialItem>(
+                  value: matSel,
+                  items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
+                  onChanged: (v) => matSel = v,
+                  decoration: const InputDecoration(labelText: 'Material'),
+                ),
+                TextFormField(
+                  controller: pesoCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Pesagens (kg)',
+                    hintText: 'Informe as pesagens separadas por +',
+                  ),
+                ),
+                TextFormField(
+                  controller: precoCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Preço unitário'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                    const SizedBox(width: 8),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Salvar')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (ok != true) return;
+    final pesos = _parsePesos(pesoCtrl.text);
+    final preco = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? e.precoUnitario;
+    final pesosFinais = pesos.isNotEmpty ? pesos : (e.pesosJson.isNotEmpty ? List<double>.from(e.pesosJson) : <double>[e.peso]);
+    final pesoTotal = pesosFinais.fold<double>(0, (sum, p) => sum + p);
+    try {
+      final atualizado = Entrada(
+        id: e.id,
+        idMaterial: matSel?.id ?? e.idMaterial,
+        idFornecedor: e.idFornecedor,
+        numeroLote: e.numeroLote,
+        pesosJson: pesosFinais,
+        precoUnitario: preco,
+        qtdPesagens: null,
+        peso: pesoTotal,
+        valorTotal: null,
+        data: e.data,
+        registradoPor: e.registradoPor,
+      );
+      await _entradaService.atualizar(atualizado);
+      await _load();
+      mudou = true;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item atualizado')));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+    }
+  }
+
+  Future<void> _adicionarItem() async {
+    mdl.MaterialItem? matSel = materiais.isNotEmpty ? materiais.first : null;
+    final pesoCtrl = TextEditingController();
+    final precoCtrl = TextEditingController(text: (matSel?.precoCompra ?? 0).toStringAsFixed(2));
+    Fornecedor? fornSel;
+    final loteForn = _loteFornecedorId();
+    if (loteForn != null) {
+      try { fornSel = fornecedores.firstWhere((f) => f.id == loteForn); } catch (_) {}
+    } else {
+      fornSel = fornecedores.isNotEmpty ? fornecedores.first : null;
+    }
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Adicionar item ao lote', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                if (loteForn == null)
+                  DropdownButtonFormField<Fornecedor>(
+                    value: fornSel,
+                    items: fornecedores.map((f) => DropdownMenuItem(value: f, child: Text(f.nome))).toList(),
+                    onChanged: (v) => fornSel = v,
+                    decoration: const InputDecoration(labelText: 'Fornecedor'),
+                  ),
+                DropdownButtonFormField<mdl.MaterialItem>(
+                  value: matSel,
+                  items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
+                  onChanged: (v) {
+                    matSel = v;
+                    precoCtrl.text = (v?.precoCompra ?? 0).toStringAsFixed(2);
+                  },
+                  decoration: const InputDecoration(labelText: 'Material'),
+                ),
+                TextFormField(
+                  controller: pesoCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Pesagens (kg)',
+                    hintText: 'Informe as pesagens separadas por +',
+                  ),
+                ),
+                TextFormField(
+                  controller: precoCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Preço unitário'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                    const SizedBox(width: 8),
+                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Adicionar')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (ok != true) return;
+    final pesos = _parsePesos(pesoCtrl.text);
+    final pesoTotal = pesos.fold<double>(0, (sum, p) => sum + p);
+    final preco = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? (matSel?.precoCompra ?? 0);
+    final idFornecedor = loteForn ?? (fornSel?.id);
+    if (matSel?.id == null || idFornecedor == null || pesos.isEmpty || pesoTotal <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha os campos')));
+      return;
+    }
+    try {
+      final novo = Entrada(
+        id: null,
+        idMaterial: matSel!.id!,
+        idFornecedor: idFornecedor,
+        numeroLote: widget.numeroLote,
+        pesosJson: pesos,
+        precoUnitario: preco,
+        qtdPesagens: null,
+        peso: pesoTotal,
+        valorTotal: null,
+        data: DateTime.now().toIso8601String(),
+        registradoPor: 0,
+      );
+      await _entradaService.adicionar(novo);
+      await _load();
+      mudou = true;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item adicionado')));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: () => Navigator.pop(context, mudou)),
+        title: Text('Lote ${widget.numeroLote}'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: carregando ? null : _adicionarItem,
+        child: const Icon(LucideIcons.plus),
+        ),
+      body: carregando
+          ? const Center(child: CircularProgressIndicator())
+          : erro != null
+              ? Center(child: Text('Erro: $erro'))
+              : itens.isEmpty
+                  ? const Center(child: Text('Sem itens. Use + para adicionar.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+                      itemCount: itens.length,
+                      itemBuilder: (_, i) {
+                        final e = itens[i];
+                        final mat = materiais.firstWhere((m) => m.id == e.idMaterial, orElse: () => mdl.MaterialItem(id: e.idMaterial, nome: 'Material ${e.idMaterial}', precoCompra: e.precoUnitario, precoVenda: e.precoUnitario));
+                        final valor = e.valorTotal ?? (e.peso * e.precoUnitario);
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text(mat.nome),
+                            subtitle: Text('Peso: ${e.peso.toStringAsFixed(2)} kg  •  Unit: ${currency.format(e.precoUnitario)}  •  Total: ${currency.format(valor)}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(icon: const Icon(LucideIcons.pencil), onPressed: () => _editarItem(e)),
+                                IconButton(icon: const Icon(LucideIcons.trash2), onPressed: () => _excluirItem(e)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+    );
   }
 }
