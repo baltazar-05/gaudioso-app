@@ -89,11 +89,15 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       final entrada = widget.entrada;
       if (entrada != null) {
         try {
-          final fornecedor = fornecedores.firstWhere((f) => f.id == entrada.idFornecedor);
+          final fornecedor = fornecedores.firstWhere(
+            (f) => f.id == entrada.idFornecedor,
+          );
           setState(() => _fornecedorSelecionado = fornecedor);
         } catch (_) {}
         try {
-          final material = materiais.firstWhere((m) => m.id == entrada.idMaterial);
+          final material = materiais.firstWhere(
+            (m) => m.id == entrada.idMaterial,
+          );
           setState(() {
             _itens
               ..clear()
@@ -126,9 +130,9 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
 
   Future<void> _salvar() async {
     if (_fornecedorSelecionado == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione o fornecedor')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Selecione o fornecedor')));
       return;
     }
     if (_itens.isEmpty) {
@@ -140,7 +144,9 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
 
     final user = await _auth.currentUser();
     final registradoPor = _extractUserId(user);
-    final registroBase = widget.entrada != null ? _registroData : DateTime.now();
+    final registroBase = widget.entrada != null
+        ? _registroData
+        : DateTime.now();
     final dataStr = _formatForApi(registroBase);
 
     try {
@@ -183,7 +189,10 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: _deleteColor, content: Text('Erro ao salvar: $e')),
+        SnackBar(
+          backgroundColor: _deleteColor,
+          content: Text('Erro ao salvar: $e'),
+        ),
       );
     }
   }
@@ -235,9 +244,20 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
           title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(editando ? LucideIcons.pencil : LucideIcons.plus, size: 22, color: Colors.white),
+              Icon(
+                editando ? LucideIcons.pencil : LucideIcons.plus,
+                size: 22,
+                color: Colors.white,
+              ),
               const SizedBox(width: 8),
-              Text(editando ? 'Editar Entrada' : 'Nova Entrada', style: _poppins(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.white)),
+              Text(
+                editando ? 'Editar Entrada' : 'Nova Entrada',
+                style: _poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
         ),
@@ -250,7 +270,9 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
             ),
           ),
           child: _carregandoDados
-              ? const Center(child: CircularProgressIndicator(color: _primaryColor))
+              ? const Center(
+                  child: CircularProgressIndicator(color: _primaryColor),
+                )
               : Padding(
                   padding: const EdgeInsets.all(16),
                   child: Container(
@@ -258,7 +280,11 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                       color: _cardBackground,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
-                        BoxShadow(color: _textColor.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 10)),
+                        BoxShadow(
+                          color: _textColor.withValues(alpha: 0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -267,20 +293,39 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                       child: ListView(
                         padding: const EdgeInsets.all(20),
                         children: [
-                          Text('Fornecedor', style: _poppins(fontWeight: FontWeight.w500)),
+                          Text(
+                            'Fornecedor',
+                            style: _poppins(fontWeight: FontWeight.w500),
+                          ),
                           const SizedBox(height: 6),
                           DropdownButtonFormField<Fornecedor>(
-                            initialValue: _fornecedorSelecionado,
+                            value: _fornecedorSelecionado,
                             dropdownColor: _cardBackground,
                             iconEnabledColor: _highlightColor,
-                            iconDisabledColor: _textColor.withValues(alpha: 0.35),
-                            decoration: const InputDecoration(border: OutlineInputBorder(), filled: true),
-                            hint: Text('Selecione um fornecedor', style: _poppins(color: _textColor.withValues(alpha: 0.6))),
+                            iconDisabledColor: _textColor.withValues(
+                              alpha: 0.35,
+                            ),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              filled: true,
+                            ),
+                            hint: Text(
+                              'Selecione um fornecedor',
+                              style: _poppins(
+                                color: _textColor.withValues(alpha: 0.6),
+                              ),
+                            ),
                             style: _poppins(),
                             items: _fornecedores
-                                .map((f) => DropdownMenuItem(value: f, child: Text(f.nome, style: _poppins())))
+                                .map(
+                                  (f) => DropdownMenuItem(
+                                    value: f,
+                                    child: Text(f.nome, style: _poppins()),
+                                  ),
+                                )
                                 .toList(),
-                            onChanged: (value) => setState(() => _fornecedorSelecionado = value),
+                            onChanged: (value) =>
+                                setState(() => _fornecedorSelecionado = value),
                           ),
                           const SizedBox(height: 16),
                           if (_itens.isEmpty)
@@ -289,19 +334,37 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                               decoration: BoxDecoration(
                                 color: _cardBackground,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: _textColor.withValues(alpha: 0.4)),
+                                border: Border.all(
+                                  color: _textColor.withValues(alpha: 0.4),
+                                ),
                               ),
-                              child: Text('Nenhum item adicionado', style: _poppins(color: _textColor.withValues(alpha: 0.6))),
+                              child: Text(
+                                'Nenhum item adicionado',
+                                style: _poppins(
+                                  color: _textColor.withValues(alpha: 0.6),
+                                ),
+                              ),
                             )
                           else
-                            Column(children: [for (int i = 0; i < _itens.length; i++) _buildItemCard(_itens[i], i)]),
+                            Column(
+                              children: [
+                                for (int i = 0; i < _itens.length; i++)
+                                  _buildItemCard(_itens[i], i),
+                              ],
+                            ),
                           const SizedBox(height: 12),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: ElevatedButton.icon(
                               onPressed: _abrirEditorItem,
-                              icon: const Icon(LucideIcons.plus, color: Colors.white),
-                              label: Text('Adicionar item', style: _poppins(color: Colors.white)),
+                              icon: const Icon(
+                                LucideIcons.plus,
+                                color: Colors.white,
+                              ),
+                              label: Text(
+                                'Adicionar item',
+                                style: _poppins(color: Colors.white),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -309,8 +372,14 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
                             onPressed: _salvar,
-                            icon: const Icon(LucideIcons.save, color: Colors.white),
-                            label: Text(editando ? 'Salvar alterações' : 'Salvar', style: _poppins(color: Colors.white)),
+                            icon: const Icon(
+                              LucideIcons.save,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              editando ? 'Salvar alterações' : 'Salvar',
+                              style: _poppins(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),
@@ -330,11 +399,18 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       final display = (user?['nome'] ?? user?['username'] ?? '') as String;
       if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuScreen(username: display, initialIndex: index)),
+        MaterialPageRoute(
+          builder: (_) => MenuScreen(username: display, initialIndex: index),
+        ),
         (route) => false,
       );
     }
-    Widget navItem({required IconData icon, required String label, required int index}) {
+
+    Widget navItem({
+      required IconData icon,
+      required String label,
+      required int index,
+    }) {
       return GestureDetector(
         onTap: () => go(index),
         behavior: HitTestBehavior.opaque,
@@ -351,6 +427,7 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
         ),
       );
     }
+
     return BottomAppBar(
       color: Colors.white,
       elevation: 8,
@@ -370,9 +447,18 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
   }
 
   Widget _buildResumo() {
-    final totalPesagens = _itens.fold<int>(0, (acc, item) => acc + item.bagCount);
-    final totalPeso = _itens.fold<double>(0, (acc, item) => acc + item.pesoTotal);
-    final totalValor = _itens.fold<double>(0, (acc, item) => acc + item.valorTotal);
+    final totalPesagens = _itens.fold<int>(
+      0,
+      (acc, item) => acc + item.bagCount,
+    );
+    final totalPeso = _itens.fold<double>(
+      0,
+      (acc, item) => acc + item.pesoTotal,
+    );
+    final totalValor = _itens.fold<double>(
+      0,
+      (acc, item) => acc + item.valorTotal,
+    );
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -389,7 +475,9 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
   }
 
   Widget _buildItemCard(_EntradaItem item, int index) {
-    final pesosDescricao = item.pesos.map((p) => '${p.toStringAsFixed(2)} kg').join(', ');
+    final pesosDescricao = item.pesos
+        .map((p) => '${p.toStringAsFixed(2)} kg')
+        .join(', ');
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
@@ -397,7 +485,11 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
         color: _cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -414,14 +506,25 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.material.nome, style: TextStyle(color: _textColor, fontSize: 16)),
+                Text(
+                  item.material.nome,
+                  style: TextStyle(color: _textColor, fontSize: 16),
+                ),
                 const SizedBox(height: 4),
-                Text('Pesagens: ${item.bagCount}   |   Peso total: ${item.pesoTotal.toStringAsFixed(2)} kg', style: _poppins(color: _textColor.withValues(alpha: 0.85))),
+                Text(
+                  'Pesagens: ${item.bagCount}   |   Peso total: ${item.pesoTotal.toStringAsFixed(2)} kg',
+                  style: _poppins(color: _textColor.withValues(alpha: 0.85)),
+                ),
                 const SizedBox(height: 2),
-                Text('Preço unitário: R\$ ${item.precoUnitario.toStringAsFixed(2)}   |   Valor total: R\$ ${item.valorTotal.toStringAsFixed(2)}'),
+                Text(
+                  'Preço unitário: R\$ ${item.precoUnitario.toStringAsFixed(2)}   |   Valor total: R\$ ${item.valorTotal.toStringAsFixed(2)}',
+                ),
                 if (pesosDescricao.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text('Pesos: $pesosDescricao', style: _poppins(color: _textColor.withValues(alpha: 0.6))),
+                  Text(
+                    'Pesos: $pesosDescricao',
+                    style: _poppins(color: _textColor.withValues(alpha: 0.6)),
+                  ),
                 ],
               ],
             ),
@@ -440,22 +543,31 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     );
   }
 
-  Future<void> _abrirEditorItem({ _EntradaItem? item, int? index }) async {
+  Future<void> _abrirEditorItem({_EntradaItem? item, int? index}) async {
     final materiais = _materiais;
-    MaterialItem? materialSel = item?.material ?? (materiais.isNotEmpty ? materiais.first : null);
-    final pesosCtrl = TextEditingController(text: item != null ? item.pesos.map((e) => e.toStringAsFixed(2)).join(' + ') : '');
+    MaterialItem? materialSel =
+        item?.material ?? (materiais.isNotEmpty ? materiais.first : null);
+    final pesosCtrl = TextEditingController(
+      text: item != null
+          ? item.pesos.map((e) => e.toStringAsFixed(2)).join(' + ')
+          : '',
+    );
     double precoSel = item?.precoUnitario ?? (materialSel?.precoCompra ?? 0);
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -463,30 +575,63 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Material', style: _poppins(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Material',
+                        style: _poppins(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<MaterialItem>(
-                        initialValue: materialSel,
-                        items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
-                        onChanged: (m) => setModal(() { materialSel = m; precoSel = m?.precoCompra ?? precoSel; }),
-                        decoration: const InputDecoration(border: OutlineInputBorder(), filled: true),
+                        value: materialSel,
+                        items: materiais
+                            .map(
+                              (m) => DropdownMenuItem(
+                                value: m,
+                                child: Text(m.nome),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (m) => setModal(() {
+                          materialSel = m;
+                          precoSel = m?.precoCompra ?? precoSel;
+                        }),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          filled: true,
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      Text('Pesos (kg) — separe com +', style: _poppins(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Pesos (kg) — separe com +',
+                        style: _poppins(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: pesosCtrl,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'ex.: 12.5 + 7.30 + 3'),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'ex.: 12.5 + 7.30 + 3',
+                        ),
                         keyboardType: TextInputType.text,
                       ),
                       const SizedBox(height: 12),
-                      Text('Preço unitário (R\$)', style: _poppins(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Preço unitário (R\$)',
+                        style: _poppins(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         initialValue: precoSel.toStringAsFixed(2),
-                        decoration: const InputDecoration(border: OutlineInputBorder()),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (v) => setModal(() => precoSel = double.tryParse(v.replaceAll(',', '.')) ?? precoSel),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (v) => setModal(
+                          () => precoSel =
+                              double.tryParse(v.replaceAll(',', '.')) ??
+                              precoSel,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Align(
@@ -498,8 +643,14 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                             final pesos = _parsePesos(pesosCtrl.text);
                             if (pesos.isEmpty) return;
                             setState(() {
-                              final novo = _EntradaItem(material: material, pesos: pesos, precoUnitario: precoSel);
-                              if (index != null && index >= 0 && index < _itens.length) {
+                              final novo = _EntradaItem(
+                                material: material,
+                                pesos: pesos,
+                                precoUnitario: precoSel,
+                              );
+                              if (index != null &&
+                                  index >= 0 &&
+                                  index < _itens.length) {
                                 _itens[index] = novo;
                               } else {
                                 _itens.add(novo);
@@ -507,7 +658,10 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                             });
                             Navigator.pop(ctx);
                           },
-                          child: Text('Salvar item', style: _poppins(color: Colors.white)),
+                          child: Text(
+                            'Salvar item',
+                            style: _poppins(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -522,7 +676,11 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
   }
 
   List<double> _parsePesos(String texto) {
-    final partes = texto.split(RegExp('[+;\\r\\n]')).map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+    final partes = texto
+        .split(RegExp('[+;\\r\\n]'))
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
     final pesos = <double>[];
     for (final parte in partes) {
       final valor = double.tryParse(parte.replaceAll(',', '.'));
@@ -545,7 +703,8 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     return 0;
   }
 
-  String _formatForApi(DateTime dt) => DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
+  String _formatForApi(DateTime dt) =>
+      DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
 
   DateTime _parseDateTime(String data) {
     final texto = data.trim();
@@ -558,7 +717,9 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
         return DateTime.parse(normalizado);
       } catch (_) {
         if (texto.length == 10) {
-          try { return DateTime.parse('${texto}T00:00:00'); } catch (_) {}
+          try {
+            return DateTime.parse('${texto}T00:00:00');
+          } catch (_) {}
         }
       }
     }

@@ -14,15 +14,11 @@ import 'package:gaudioso_app/models/saida.dart';
 import 'package:gaudioso_app/models/cliente.dart';
 import 'package:gaudioso_app/models/fornecedor.dart';
 
-import 'cadastros_screen.dart';
 import 'estoque_screen.dart';
-import 'forms/entrada_form_screen.dart';
-import 'forms/saida_form_screen.dart';
-import 'splash_screen.dart';
-import 'materiais_screen.dart';
 import 'profile/profile_screen.dart';
 import 'relatorios_screen.dart';
 import 'fluxo_lotes_screen.dart';
+import 'splash_screen.dart';
 
 // Core brand colors (one-time constants)
 const kText = Color(0xFF1F2937);
@@ -79,7 +75,9 @@ class _EcoBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inactive = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+    final inactive = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.6);
     final active = Theme.of(context).colorScheme.primary;
     return BottomAppBar(
       color: Colors.white,
@@ -89,10 +87,34 @@ class _EcoBottomBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(icon: Icons.home_outlined, label: 'Resumo', index: 0, active: active, inactive: inactive),
-            _navItem(icon: LucideIcons.arrowDownUp, label: 'Fluxo', index: 1, active: active, inactive: inactive),
-            _navItem(icon: LucideIcons.database, label: 'Estoque', index: 2, active: active, inactive: inactive),
-            _navItem(icon: LucideIcons.chartBar, label: 'Relatorios', index: 3, active: active, inactive: inactive),
+            _navItem(
+              icon: Icons.home_outlined,
+              label: 'Resumo',
+              index: 0,
+              active: active,
+              inactive: inactive,
+            ),
+            _navItem(
+              icon: LucideIcons.arrowDownUp,
+              label: 'Fluxo',
+              index: 1,
+              active: active,
+              inactive: inactive,
+            ),
+            _navItem(
+              icon: LucideIcons.database,
+              label: 'Estoque',
+              index: 2,
+              active: active,
+              inactive: inactive,
+            ),
+            _navItem(
+              icon: LucideIcons.chartBar,
+              label: 'Relatorios',
+              index: 3,
+              active: active,
+              inactive: inactive,
+            ),
           ],
         ),
       ),
@@ -117,7 +139,13 @@ class _EcoBottomBar extends StatelessWidget {
           children: [
             Icon(icon, color: selected ? active : inactive, size: 22),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, color: selected ? active : inactive)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: selected ? active : inactive,
+              ),
+            ),
           ],
         ),
       ),
@@ -159,13 +187,18 @@ class _ResumoTabState extends State<_ResumoTab> {
     } catch (_) {
       final m = RegExp(r"(\d{4})-(\d{2})-(\d{2})").firstMatch(s);
       if (m != null) {
-        return DateTime(int.parse(m.group(1)!), int.parse(m.group(2)!), int.parse(m.group(3)!));
+        return DateTime(
+          int.parse(m.group(1)!),
+          int.parse(m.group(2)!),
+          int.parse(m.group(3)!),
+        );
       }
       return DateTime.fromMillisecondsSinceEpoch(0);
     }
   }
 
-  bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
@@ -205,12 +238,17 @@ class _ResumoTabState extends State<_ResumoTab> {
                 builder: (context, snap) {
                   final scheme = Theme.of(context).colorScheme;
                   final on = Colors.black;
-                  String label = _showEntradas ? 'Ultima entrada' : 'Ultima saida';
+                  String label = _showEntradas
+                      ? 'Ultima entrada'
+                      : 'Ultima saida';
                   String nome = '--';
                   String dataStr = '--';
                   String pesoStr = '--';
                   String valorStr = '--';
-                  final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+                  final currency = NumberFormat.currency(
+                    locale: 'pt_BR',
+                    symbol: 'R\$',
+                  );
 
                   if (snap.hasData) {
                     final entradas = (snap.data![0] as List<Entrada>);
@@ -219,52 +257,97 @@ class _ResumoTabState extends State<_ResumoTab> {
                     final fornecedores = (snap.data![3] as List<Fornecedor>);
 
                     // Mapas de nomes
-                    final cMap = {for (final c in clientes) if (c.id != null) c.id!: c.nome};
-                    final fMap = {for (final f in fornecedores) if (f.id != null) f.id!: f.nome};
+                    final cMap = {
+                      for (final c in clientes)
+                        if (c.id != null) c.id!: c.nome,
+                    };
+                    final fMap = {
+                      for (final f in fornecedores)
+                        if (f.id != null) f.id!: f.nome,
+                    };
 
                     // Ãšltimos por data
                     Entrada? ultEntrada;
                     DateTime? dtE;
                     for (final e in entradas) {
                       final d = _parseDateTime(e.data).toLocal();
-                      if (ultEntrada == null || d.isAfter(dtE!)) { ultEntrada = e; dtE = d; }
+                      if (ultEntrada == null || d.isAfter(dtE!)) {
+                        ultEntrada = e;
+                        dtE = d;
+                      }
                     }
                     Saida? ultSaida;
                     DateTime? dtS;
                     for (final s in saidas) {
                       final d = _parseDateTime(s.data).toLocal();
-                      if (ultSaida == null || d.isAfter(dtS!)) { ultSaida = s; dtS = d; }
+                      if (ultSaida == null || d.isAfter(dtS!)) {
+                        ultSaida = s;
+                        dtS = d;
+                      }
                     }
 
                     if (_showEntradas && ultEntrada != null && dtE != null) {
                       label = 'Ultima entrada';
-                      nome = fMap[ultEntrada.idFornecedor] ?? 'Fornecedor ${ultEntrada.idFornecedor}';
+                      nome =
+                          fMap[ultEntrada.idFornecedor] ??
+                          'Fornecedor ${ultEntrada.idFornecedor}';
                       dataStr = DateFormat('dd/MM/yyyy HH:mm').format(dtE);
                       // soma do lote/momento: mesmo fornecedor e mesmo minuto
-                      final b = DateTime(dtE.year, dtE.month, dtE.day, dtE.hour, dtE.minute);
+                      final b = DateTime(
+                        dtE.year,
+                        dtE.month,
+                        dtE.day,
+                        dtE.hour,
+                        dtE.minute,
+                      );
                       double pesoTot = 0, valorTot = 0;
                       for (final e in entradas) {
                         final d = _parseDateTime(e.data).toLocal();
-                        final bb = DateTime(d.year, d.month, d.day, d.hour, d.minute);
-                        if (e.idFornecedor == ultEntrada.idFornecedor && bb == b) {
+                        final bb = DateTime(
+                          d.year,
+                          d.month,
+                          d.day,
+                          d.hour,
+                          d.minute,
+                        );
+                        if (e.idFornecedor == ultEntrada.idFornecedor &&
+                            bb == b) {
                           pesoTot += e.peso;
-                          valorTot += (e.valorTotal ?? (e.peso * e.precoUnitario));
+                          valorTot +=
+                              (e.valorTotal ?? (e.peso * e.precoUnitario));
                         }
                       }
                       pesoStr = '${pesoTot.toStringAsFixed(2)} kg';
                       valorStr = currency.format(valorTot);
-                    } else if (!_showEntradas && ultSaida != null && dtS != null) {
+                    } else if (!_showEntradas &&
+                        ultSaida != null &&
+                        dtS != null) {
                       label = 'Ultima saida';
-                      nome = cMap[ultSaida.idCliente] ?? 'Cliente ${ultSaida.idCliente}';
+                      nome =
+                          cMap[ultSaida.idCliente] ??
+                          'Cliente ${ultSaida.idCliente}';
                       dataStr = DateFormat('dd/MM/yyyy HH:mm').format(dtS);
-                      final b = DateTime(dtS.year, dtS.month, dtS.day, dtS.hour, dtS.minute);
+                      final b = DateTime(
+                        dtS.year,
+                        dtS.month,
+                        dtS.day,
+                        dtS.hour,
+                        dtS.minute,
+                      );
                       double pesoTot = 0, valorTot = 0;
                       for (final s in saidas) {
                         final d = _parseDateTime(s.data).toLocal();
-                        final bb = DateTime(d.year, d.month, d.day, d.hour, d.minute);
+                        final bb = DateTime(
+                          d.year,
+                          d.month,
+                          d.day,
+                          d.hour,
+                          d.minute,
+                        );
                         if (s.idCliente == ultSaida.idCliente && bb == b) {
                           pesoTot += s.peso;
-                          valorTot += (s.valorTotal ?? (s.peso * s.precoUnitario));
+                          valorTot +=
+                              (s.valorTotal ?? (s.peso * s.precoUnitario));
                         }
                       }
                       pesoStr = '${pesoTot.toStringAsFixed(2)} kg';
@@ -274,7 +357,10 @@ class _ResumoTabState extends State<_ResumoTab> {
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: scheme.onPrimary.withOpacity(0.18),
                       borderRadius: BorderRadius.circular(14),
@@ -288,10 +374,30 @@ class _ResumoTabState extends State<_ResumoTab> {
                           runSpacing: 6,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Text('$label:', style: TextStyle(color: on, fontWeight: FontWeight.w700)),
-                            const Icon(Icons.person_outline, color: Colors.black, size: 16),
-                            Text(nome, style: TextStyle(color: on, fontWeight: FontWeight.w600)),
-                            const Icon(Icons.event, color: Colors.black, size: 16),
+                            Text(
+                              '$label:',
+                              style: TextStyle(
+                                color: on,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.person_outline,
+                              color: Colors.black,
+                              size: 16,
+                            ),
+                            Text(
+                              nome,
+                              style: TextStyle(
+                                color: on,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.event,
+                              color: Colors.black,
+                              size: 16,
+                            ),
                             Text(dataStr, style: TextStyle(color: on)),
                           ],
                         ),
@@ -301,9 +407,17 @@ class _ResumoTabState extends State<_ResumoTab> {
                           runSpacing: 6,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            const Icon(Icons.scale, color: Colors.black, size: 16),
+                            const Icon(
+                              Icons.scale,
+                              color: Colors.black,
+                              size: 16,
+                            ),
                             Text(pesoStr, style: TextStyle(color: on)),
-                            const Icon(Icons.attach_money, color: Colors.black, size: 16),
+                            const Icon(
+                              Icons.attach_money,
+                              color: Colors.black,
+                              size: 16,
+                            ),
                             Text(valorStr, style: TextStyle(color: on)),
                           ],
                         ),
@@ -328,32 +442,41 @@ class _ResumoTabState extends State<_ResumoTab> {
                       final dt = _parseDateTime(e.data).toLocal();
                       if (_isSameDay(dt, hoje)) {
                         pesoEntradas += e.peso;
-                        valorEntradas += (e.valorTotal ?? (e.peso * e.precoUnitario));
+                        valorEntradas +=
+                            (e.valorTotal ?? (e.peso * e.precoUnitario));
                       }
                     }
                     for (final s in saidas) {
                       final dt = _parseDateTime(s.data).toLocal();
                       if (_isSameDay(dt, hoje)) {
                         pesoSaidas += s.peso;
-                        valorSaidas += (s.valorTotal ?? (s.peso * s.precoUnitario));
+                        valorSaidas +=
+                            (s.valorTotal ?? (s.peso * s.precoUnitario));
                       }
                     }
                   }
-                  final carregando = snap.connectionState != ConnectionState.done;
+                  final carregando =
+                      snap.connectionState != ConnectionState.done;
                   final erro = snap.hasError;
                   final mostrandoEntradas = _showEntradas;
                   final pesoTxt = carregando
                       ? '...'
                       : (erro
-                          ? '--'
-                          : '${(mostrandoEntradas ? pesoEntradas : pesoSaidas).toStringAsFixed(2)} kg');
+                            ? '--'
+                            : '${(mostrandoEntradas ? pesoEntradas : pesoSaidas).toStringAsFixed(2)} kg');
                   final valorTxt = carregando
                       ? '...'
                       : (erro
-                          ? '--'
-                          : currency.format(mostrandoEntradas ? valorEntradas : valorSaidas));
-                  final pesoTitle = mostrandoEntradas ? 'Peso toatl hoje (Entradas)' : 'Peso total hoje (Saídas)';
-                  final valorTitle = mostrandoEntradas ? 'Valor total hoje (Entradas)' : 'Valor Total hoje (Saídas)';
+                            ? '--'
+                            : currency.format(
+                                mostrandoEntradas ? valorEntradas : valorSaidas,
+                              ));
+                  final pesoTitle = mostrandoEntradas
+                      ? 'Peso toatl hoje (Entradas)'
+                      : 'Peso total hoje (Saídas)';
+                  final valorTitle = mostrandoEntradas
+                      ? 'Valor total hoje (Entradas)'
+                      : 'Valor Total hoje (Saídas)';
                   return Row(
                     children: [
                       Expanded(
@@ -403,7 +526,7 @@ class _ResumoTabState extends State<_ResumoTab> {
                   final items = <Widget>[
                     GaudiosoActionCard(
                       icon: Icons.recycling,
-                      title: 'Cadastrar\nMateriais',
+                      title: 'r\nMateriais',
                       subtitle: 'Novo item reciclavel',
                       color: kAmber,
                       onTap: () => Navigator.pushNamed(context, '/materiais'),
@@ -440,14 +563,25 @@ class _ResumoTabState extends State<_ResumoTab> {
     );
   }
 
-  Widget _kpiCard(BuildContext context, {required Color color, required String title, required String value}) {
+  Widget _kpiCard(
+    BuildContext context, {
+    required Color color,
+    required String title,
+    required String value,
+  }) {
     final on = Colors.black;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,8 +590,11 @@ class _ResumoTabState extends State<_ResumoTab> {
             duration: const Duration(milliseconds: 300),
             child: Text(
               title,
-              key: ValueKey<String>('title-'+title),
-              style: TextStyle(color: on.withValues(alpha: 0.9), fontWeight: FontWeight.w600),
+              key: ValueKey<String>('title-' + title),
+              style: TextStyle(
+                color: on.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -465,8 +602,12 @@ class _ResumoTabState extends State<_ResumoTab> {
             duration: const Duration(milliseconds: 300),
             child: Text(
               value,
-              key: ValueKey<String>('value-'+value),
-              style: TextStyle(color: on, fontSize: 28, fontWeight: FontWeight.w700),
+              key: ValueKey<String>('value-' + value),
+              style: TextStyle(
+                color: on,
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -475,23 +616,17 @@ class _ResumoTabState extends State<_ResumoTab> {
   }
 }
 
-class _OptionsMenu extends StatelessWidget {
-  final String username;
-  const _OptionsMenu({required this.username});
-  @override
-  Widget build(BuildContext context) {
-    // Deprecated: kept for reference but unused after drawer introduction
-    return const SizedBox.shrink();
-  }
-}
-
-class _SideOptionsDrawer extends StatelessWidget {
+class _SideOptionsDrawer extends StatefulWidget {
   final String username;
   const _SideOptionsDrawer({required this.username});
 
   @override
+  State<_SideOptionsDrawer> createState() => _SideOptionsDrawerState();
+}
+
+class _SideOptionsDrawerState extends State<_SideOptionsDrawer> {
+  @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).scaffoldBackgroundColor;
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
@@ -502,79 +637,120 @@ class _SideOptionsDrawer extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.transparent),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const CircleAvatar(radius: 24, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.black)),
-                  const SizedBox(height: 8),
-                  Text(username, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black)),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.black),
-              title: const Text('Configurações'),
-              subtitle: const Text('Em breve', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  builder: (ctx) => const SafeArea(
-                    child: ListTile(
-                      leading: Icon(Icons.settings),
-                      title: Text('Configurações (em breve)'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.transparent),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.black),
                     ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.dark_mode, color: Colors.black),
-              title: const Text('Modo escuro', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Modo escuro: em breve')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline, color: Colors.black),
-              title: const Text('Perfil', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProfileScreen(username: username)),
-                );
-              },
-            ),
-            const Spacer(),
-            const Divider(height: 1, color: Colors.white24),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Sair', style: TextStyle(color: Colors.black)),
-              onTap: () async {
-                final navigator = Navigator.of(context);
-                await AuthService().logout();
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const SplashScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-          ],
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.username,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.black,
+                ),
+                title: const Text(
+                  'Controle de Usuários',
+                  style: TextStyle(color: Colors.black),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/controle-usuarios');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings, color: Colors.black),
+                title: const Text('Configurações'),
+                subtitle: const Text(
+                  'Em breve',
+                  style: TextStyle(color: Colors.black),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    builder: (ctx) => const SafeArea(
+                      child: ListTile(
+                        leading: Icon(Icons.settings),
+                        title: Text('Configurações (em breve)'),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.dark_mode, color: Colors.black),
+                title: const Text(
+                  'Modo escuro',
+                  style: TextStyle(color: Colors.black),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Modo escuro: em breve')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_outline, color: Colors.black),
+                title: const Text(
+                  'Perfil',
+                  style: TextStyle(color: Colors.black),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(username: widget.username),
+                    ),
+                  );
+                },
+              ),
+              const Spacer(),
+              const Divider(height: 1, color: Colors.white24),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text(
+                  'Sair',
+                  style: TextStyle(color: Colors.black),
+                ),
+                onTap: () async {
+                  final navigator = Navigator.of(context);
+                  await AuthService().logout();
+                  navigator.pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const SplashScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -614,7 +790,9 @@ class GaudiosoActionCard extends StatelessWidget {
               height: 8,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(26),
+                ),
               ),
             ),
             // Light background gradient
@@ -625,10 +803,7 @@ class GaudiosoActionCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      color.withOpacity(0.06),
-                    ],
+                    colors: [Colors.white, color.withOpacity(0.06)],
                   ),
                 ),
               ),
@@ -637,7 +812,10 @@ class GaudiosoActionCard extends StatelessWidget {
             Align(
               alignment: Alignment.center,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 16,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -647,7 +825,11 @@ class GaudiosoActionCard extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kText),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: kText,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Flexible(
@@ -704,7 +886,7 @@ class _MovimentarTab2State extends State<_MovimentarTab2> {
       final materiais = await _materialService.listar();
       _materialNomes = {
         for (final m in materiais)
-          if (m.id != null) m.id!: m.nome
+          if (m.id != null) m.id!: m.nome,
       };
     } catch (_) {
       _materialNomes = {};
@@ -714,22 +896,26 @@ class _MovimentarTab2State extends State<_MovimentarTab2> {
       final saidas = await _saidaService.listar();
       final items = <_MovItem>[];
       for (final e in entradas) {
-        items.add(_MovItem(
-          tipo: _MovTipo.entrada,
-          data: _parseDateTime(e.data),
-          peso: e.peso,
-          materialId: e.idMaterial,
-          entrada: e,
-        ));
+        items.add(
+          _MovItem(
+            tipo: _MovTipo.entrada,
+            data: _parseDateTime(e.data),
+            peso: e.peso,
+            materialId: e.idMaterial,
+            entrada: e,
+          ),
+        );
       }
       for (final s in saidas) {
-        items.add(_MovItem(
-          tipo: _MovTipo.saida,
-          data: _parseDateTime(s.data),
-          peso: s.peso,
-          materialId: s.idMaterial,
-          saida: s,
-        ));
+        items.add(
+          _MovItem(
+            tipo: _MovTipo.saida,
+            data: _parseDateTime(s.data),
+            peso: s.peso,
+            materialId: s.idMaterial,
+            saida: s,
+          ),
+        );
       }
       items.sort((a, b) => b.data.compareTo(a.data));
       setState(() {
@@ -801,37 +987,57 @@ class _MovimentarTab2State extends State<_MovimentarTab2> {
               child: RefreshIndicator(
                 onRefresh: _load,
                 child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-          itemCount: _itens.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-          final item = _itens[index];
-          final isEntrada = item.tipo == _MovTipo.entrada;
-          final baseColor = isEntrada ? const Color(0xFF4CAF50) : const Color(0xFFE53935);
-          final tileColor = Colors.white;
-          final icon = isEntrada ? LucideIcons.arrowDownToLine : LucideIcons.arrowUpFromLine;
-          final mat = _materialNomes[item.materialId] ?? 'Material #${item.materialId}';
-          final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(item.data.toLocal());
-          return Container(
-            decoration: BoxDecoration(
-              color: tileColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ListTile(
-              leading: CircleAvatar(backgroundColor: baseColor, child: Icon(icon, color: Colors.white, size: 18)),
-              title: Text('$mat Ã¢â‚¬Â¢ ${item.peso.toStringAsFixed(2)} kg', style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(isEntrada ? 'Entrada - $dateStr' : 'SaÃƒÂ­da - $dateStr'),
-            ),
-          );
-        },
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                  itemCount: _itens.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final item = _itens[index];
+                    final isEntrada = item.tipo == _MovTipo.entrada;
+                    final baseColor = isEntrada
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFFE53935);
+                    final tileColor = Colors.white;
+                    final icon = isEntrada
+                        ? LucideIcons.arrowDownToLine
+                        : LucideIcons.arrowUpFromLine;
+                    final mat =
+                        _materialNomes[item.materialId] ??
+                        'Material #${item.materialId}';
+                    final dateStr = DateFormat(
+                      'dd/MM/yyyy HH:mm',
+                    ).format(item.data.toLocal());
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: tileColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: baseColor,
+                          child: Icon(icon, color: Colors.white, size: 18),
+                        ),
+                        title: Text(
+                          '$mat Ã¢â‚¬Â¢ ${item.peso.toStringAsFixed(2)} kg',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          isEntrada
+                              ? 'Entrada - $dateStr'
+                              : 'SaÃƒÂ­da - $dateStr',
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -862,7 +1068,3 @@ class _MovItem {
 }
 
 // _ActionData no longer needed with GaudiosoActionCard usage
-
-
-
-

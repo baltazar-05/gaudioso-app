@@ -8,6 +8,7 @@ import 'screens/materiais_screen.dart';
 import 'screens/cadastros_screen.dart';
 import 'screens/forms/entrada_form_screen.dart';
 import 'screens/forms/saida_form_screen.dart';
+import 'screens/controle_usuarios_screen.dart';
 
 void main() {
   runApp(const GaudiosoApp());
@@ -42,8 +43,10 @@ class GaudiosoApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: scheme,
         scaffoldBackgroundColor: neutralColor,
-        textTheme: GoogleFonts.poppinsTextTheme()
-            .apply(bodyColor: textColor, displayColor: textColor),
+        textTheme: GoogleFonts.poppinsTextTheme().apply(
+          bodyColor: textColor,
+          displayColor: textColor,
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: neutralColor,
           foregroundColor: textColor,
@@ -65,7 +68,9 @@ class GaudiosoApp extends StatelessWidget {
             backgroundColor: primaryColor,
             foregroundColor: Colors.white,
             textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w400),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -102,6 +107,7 @@ class GaudiosoApp extends StatelessWidget {
         '/parceiros': (_) => const CadastrosScreen(),
         '/entrada': (_) => const EntradaFormScreen(),
         '/saida': (_) => const SaidaFormScreen(),
+        '/controle-usuarios': (_) => const ControleUsuariosScreen(),
       },
       home: const SplashScreen(),
     );

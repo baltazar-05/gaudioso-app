@@ -153,7 +153,7 @@ class SaidaLoteService {
       DateTime? ultimo;
       for (final s in list) {
         final d = parse(s.data);
-        if (d != null && (ultimo == null || d.isAfter(ultimo!))) ultimo = d;
+        if (d != null && (ultimo == null || d.isAfter(ultimo))) ultimo = d;
       }
       result.add(LoteSaidaResumo(
         numeroLote: key,

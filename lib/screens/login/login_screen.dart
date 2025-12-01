@@ -48,7 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     final saved = await _auth.currentUser();
     if (!mounted) return;
-    final displayName = (saved?['nome'] ?? saved?['username'] ?? loginId) as String;
+    final displayName =
+        (saved?['nome'] ?? saved?['username'] ?? loginId) as String;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => MenuScreen(username: displayName)),
@@ -71,117 +72,120 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildBackground() => Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF1BAA5F), Color(0xFF23B369)],
-              ),
-            ),
+    fit: StackFit.expand,
+    children: [
+      Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1BAA5F), Color(0xFF23B369)],
           ),
-          Opacity(
-            opacity: 0.18,
-            child: Image.asset(
-              'assets/Planeta.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-        ],
-      );
+        ),
+      ),
+      Opacity(
+        opacity: 0.18,
+        child: Image.asset('assets/Planeta.png', fit: BoxFit.cover),
+      ),
+    ],
+  );
 
   Widget _buildWelcomeHeader() => Positioned(
-        top: 110,
-        left: 24,
-        right: 24,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Olá.',
-              style: GoogleFonts.poppins(
-                textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+    top: 110,
+    left: 24,
+    right: 24,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Olá.',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Seja bem-vindo!',
-              style: GoogleFonts.poppins(
-                textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        const SizedBox(height: 4),
+        Text(
+          'Seja bem-vindo!',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildSlideArea() => Positioned(
-        bottom: MediaQuery.of(context).size.height * 0.16 + 16,
-        left: 0,
-        right: 0,
-        child: Column(
-          children: [
-            Text(
-              'Deslizar para acessar',
-              style: GoogleFonts.poppins(
-                textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+    bottom: MediaQuery.of(context).size.height * 0.16 + 16,
+    left: 0,
+    right: 0,
+    child: Column(
+      children: [
+        Text(
+          'Deslizar para acessar',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 10),
-            const Icon(Icons.keyboard_arrow_up, size: 48, color: Colors.white),
-          ],
+          ),
         ),
-      );
+        const SizedBox(height: 10),
+        const Icon(Icons.keyboard_arrow_up, size: 48, color: Colors.white),
+      ],
+    ),
+  );
 
   Widget _buildBottomHandle(Color primaryGreen) => DraggableScrollableSheet(
-        controller: _scroll,
-        initialChildSize: 0.16,
-        minChildSize: 0.16,
-        maxChildSize: 0.17,
-        builder: (context, controller) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
+    controller: _scroll,
+    initialChildSize: 0.16,
+    minChildSize: 0.16,
+    maxChildSize: 0.17,
+    builder: (context, controller) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, -2),
             ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _openFormModal(primaryGreen),
-              onVerticalDragUpdate: (details) {
-                if (details.delta.dy < -6) _openFormModal(primaryGreen);
-              },
-              child: Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+          ],
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openFormModal(primaryGreen),
+          onVerticalDragUpdate: (details) {
+            if (details.delta.dy < -6) _openFormModal(primaryGreen);
+          },
+          child: Center(
+            child: Container(
+              width: 40,
+              height: 5,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          );
-        },
+          ),
+        ),
       );
+    },
+  );
 
   void _openFormModal(Color primaryGreen) {
     final modalHeight = MediaQuery.of(context).size.height * 0.78;
@@ -200,12 +204,17 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (_) => SizedBox(
         height: modalHeight,
         child: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: ValueListenableBuilder<bool>(
             valueListenable: mode,
             builder: (context, isRegistering, __) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -281,8 +290,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.trim().isEmpty) {
                             return 'Informe o usuário';
                           }
-                          if (!RegExp(r'^[a-zA-Z0-9_.-]{3,}$')
-                              .hasMatch(value.trim())) {
+                          if (!RegExp(
+                            r'^[a-zA-Z0-9_.-]{3,}$',
+                          ).hasMatch(value.trim())) {
                             return 'Mín. 3 caracteres (letras/números)';
                           }
                           return null;
@@ -326,7 +336,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: Text(
                                       'Confirmar Senha',
                                       style: GoogleFonts.poppins(
-                                        textStyle: const TextStyle(color: Colors.black54),
+                                        textStyle: const TextStyle(
+                                          color: Colors.black54,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -334,11 +346,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: _confirmCtrl,
                                     decoration: const InputDecoration(
                                       border: OutlineInputBorder(),
-                                      contentPadding:
-                                          EdgeInsets.symmetric(horizontal: 10),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
                                     ),
                                     obscureText: true,
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
                                     validator: (value) {
                                       if (!isRegistering) return null;
                                       if (value == null || value.isEmpty) {
@@ -362,7 +376,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Text(
                             'Esqueceu a senha?',
                             style: GoogleFonts.poppins(
-                              textStyle: const TextStyle(color: Color(0xFF18A558)),
+                              textStyle: const TextStyle(
+                                color: Color(0xFF18A558),
+                              ),
                             ),
                           ),
                         ),
@@ -373,7 +389,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            key: ValueKey(isRegistering ? 'btn_reg' : 'btn_login'),
+                            key: ValueKey(
+                              isRegistering ? 'btn_reg' : 'btn_login',
+                            ),
                             onPressed: () {
                               Navigator.of(context).pop();
                               _submit(isRegistering);
@@ -404,7 +422,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: RichText(
                             text: TextSpan(
                               style: GoogleFonts.poppins(
-                                textStyle: const TextStyle(color: Colors.black54),
+                                textStyle: const TextStyle(
+                                  color: Colors.black54,
+                                ),
                               ),
                               children: [
                                 TextSpan(
@@ -435,8 +455,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-
-
-
-

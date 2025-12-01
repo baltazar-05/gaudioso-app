@@ -1,7 +1,10 @@
 import '../../services/api_service.dart';
 
 class ApiAuthService {
-  Future<Map<String, dynamic>> register(String username, String password) async {
+  Future<Map<String, dynamic>> register(
+    String username,
+    String password,
+  ) async {
     final res = await ApiService.postJson('/api/auth/register', {
       'username': username,
       'senha': password,
@@ -24,6 +27,7 @@ class ApiAuthService {
       final apiUsername = res['username'];
       final nome = res['nome'];
       final rawId = res['id'];
+      final role = res['role'];
 
       int? id;
       if (rawId is int) {
@@ -40,6 +44,7 @@ class ApiAuthService {
           'username': apiUsername,
           'nome': nome is String && nome.isNotEmpty ? nome : apiUsername,
           if (id != null) 'id': id,
+          if (role != null) 'role': role,
         };
       }
     }

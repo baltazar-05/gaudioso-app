@@ -340,7 +340,7 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                         Text('Cliente', style: labelStyle),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<Cliente>(
-                          initialValue: _clienteSelecionado,
+                          value: _clienteSelecionado,
                           dropdownColor: _cardBackground,
                           iconEnabledColor: _highlightColor,
                           iconDisabledColor:
@@ -636,7 +636,7 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                         Text('Material', style: localLabelStyle),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<MaterialItem>(
-                          initialValue: sel,
+                          value: sel,
                           decoration: const InputDecoration(
                             hintText: 'Selecione um material',
                             border: OutlineInputBorder(),

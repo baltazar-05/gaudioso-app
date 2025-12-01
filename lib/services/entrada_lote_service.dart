@@ -146,7 +146,7 @@ class EntradaLoteService {
       DateTime? ultimo;
       for (final e in list) {
         final d = _parseDateTime(e.data);
-        if (d != null && (ultimo == null || d.isAfter(ultimo!))) ultimo = d;
+        if (d != null && (ultimo == null || d.isAfter(ultimo))) ultimo = d;
       }
       result.add(LoteEntradaResumo(
         numeroLote: key,
