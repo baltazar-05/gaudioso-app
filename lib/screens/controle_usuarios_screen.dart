@@ -136,25 +136,15 @@ class _ControleUsuariosScreenState extends State<ControleUsuariosScreen> {
           ),
         ),
         child: usuarios.isEmpty
-            ? Center(
+            ? const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.people_outline,
-                      size: 64,
-                      color: Colors.white70,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    Icon(Icons.people_outline, size: 64, color: Colors.white70),
+                    SizedBox(height: 16),
+                    Text(
                       'Nenhum usuário cadastrado',
                       style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddUserDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Adicionar Usuário'),
                     ),
                   ],
                 ),
@@ -217,11 +207,6 @@ class _ControleUsuariosScreenState extends State<ControleUsuariosScreen> {
                   ],
                 ),
               ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddUserDialog(context),
-        backgroundColor: kGreen,
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -302,124 +287,6 @@ class _ControleUsuariosScreenState extends State<ControleUsuariosScreen> {
         ).showSnackBar(SnackBar(content: Text('Erro: $e')));
       }
     }
-  }
-
-  void _showAddUserDialog(BuildContext context) {
-    final nomeController = TextEditingController();
-    final usernameController = TextEditingController();
-    final emailController = TextEditingController();
-    final senhaController = TextEditingController();
-    String selectedRole = 'funcionario';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Novo Usuário'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nomeController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome Completo',
-                  hintText: 'Ex: João Silva',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username',
-                  hintText: 'Ex: joao.silva',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Ex: joao@example.com',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: senhaController,
-                decoration: const InputDecoration(
-                  labelText: 'Senha',
-                  hintText: 'Mínimo 6 caracteres',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: selectedRole,
-                items: const [
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                  DropdownMenuItem(
-                    value: 'funcionario',
-                    child: Text('Funcionário'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) selectedRole = value;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Papel',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (nomeController.text.isNotEmpty &&
-                  usernameController.text.isNotEmpty &&
-                  emailController.text.isNotEmpty &&
-                  senhaController.text.isNotEmpty) {
-                try {
-                  await _usuarioService.criarUsuario(
-                    nomeController.text,
-                    usernameController.text,
-                    senhaController.text,
-                    selectedRole,
-                  );
-                  if (mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Usuário ${nomeController.text} adicionado com sucesso',
-                        ),
-                      ),
-                    );
-                    _carregarUsuarios();
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Erro: $e')));
-                  }
-                }
-              }
-            },
-            child: const Text('Adicionar'),
-          ),
-        ],
-      ),
-    );
   }
 }
 
