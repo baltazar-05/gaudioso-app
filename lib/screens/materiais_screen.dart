@@ -27,11 +27,12 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
   }
 
   Future<void> carregar() async {
-    final data = await service.listar();
-    data.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+    final data = await service.listar(ativo: true);
+    final ativos = data
+      ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
     setState(() {
-      materiais = data;
-      filtrados = _filtrar(_buscaCtrl.text, data);
+      materiais = ativos;
+      filtrados = _filtrar(_buscaCtrl.text, ativos);
       carregando = false;
     });
   }
@@ -201,9 +202,58 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
                                         highlightColor: Colors.redAccent.withValues(alpha: 0.12),
                                       ),
                                       onPressed: () async {
-                                        await service.excluir(m.id!);
-                                        if (!context.mounted) return;
-                                        carregar();
+                                        bool salvando = false;
+                                        final ok = await showDialog<bool>(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (ctx) {
+                                            return StatefulBuilder(
+                                              builder: (ctx, setDlg) {
+                                                return AlertDialog(
+                                                  title: const Text('Excluir material'),
+                                                  content: Text('Deseja remover "${m.nome}"?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                                                      child: const Text('Cancelar'),
+                                                    ),
+                                                    FilledButton(
+                                                      onPressed: salvando
+                                                          ? null
+                                                          : () async {
+                                                              setDlg(() => salvando = true);
+                                                              try {
+                                                                await service.inativar(m.id!);
+                                                                if (mounted) Navigator.pop(ctx, true);
+                                                              } catch (e) {
+                                                                if (mounted) {
+                                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                                    SnackBar(content: Text('Erro ao inativar: $e')),
+                                                                  );
+                                                                }
+                                                                setDlg(() => salvando = false);
+                                                              }
+                                                            },
+                                                      child: salvando
+                                                          ? const SizedBox(
+                                                              height: 18,
+                                                              width: 18,
+                                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                                            )
+                                                          : const Text('Inativar'),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          },
+                                        );
+                                        if (ok == true && mounted) {
+                                          await carregar();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Material inativado')),
+                                          );
+                                        }
                                       },
                                     ),
                                   ],
@@ -233,9 +283,14 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
     Future<void> go(int index) async {
       final user = await AuthService().currentUser();
       final display = (user?['nome'] ?? user?['username'] ?? '') as String;
+      final role = (user?['role'] ?? 'admin') as String;
       if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuScreen(username: display, initialIndex: index)),
+        MaterialPageRoute(builder: (_) => MenuScreen(
+          username: display,
+          role: role,
+          initialIndex: _resolveMenuIndex(role, index),
+        )),
         (route) => false,
       );
     }
@@ -272,6 +327,13 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
         ),
       ),
     );
+  }
+
+  int _resolveMenuIndex(String role, int requested) {
+    if (role.toLowerCase() == 'admin') return requested;
+    if (requested < 0) return 0;
+    if (requested > 2) return 2;
+    return requested;
   }
 }
 

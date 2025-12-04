@@ -148,52 +148,85 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
     final registroBase = widget.saida != null ? _registroData : DateTime.now();
     final dataStr = _formatForApi(registroBase); // compat interna
 
-    try {
-      final existing = widget.saida;
-      if (existing != null) {
-        final item = _itens.first;
-        final saidaAtualizada = Saida(
-          id: existing.id,
-          idMaterial: item.material.id!,
-          idCliente: _clienteSelecionado!.id!,
-          numeroLote: null,
-          pesosJson: item.pesos,
-          precoUnitario: item.precoUnitario,
-          qtdPesagens: null,
-          peso: item.pesoTotal,
-          valorTotal: null,
-          data: dataStr,
-          registradoPor: registradoPor,
-        );
-        await _saidaService.atualizar(saidaAtualizada);
-      } else {
-        for (final item in _itens) {
-          final nova = Saida(
-            id: null,
-            idMaterial: item.material.id!,
-            idCliente: _clienteSelecionado!.id!,
-            numeroLote: null,
-            pesosJson: item.pesos,
-            precoUnitario: item.precoUnitario,
-            qtdPesagens: null,
-            peso: item.pesoTotal,
-            valorTotal: null,
-            data: dataStr,
-            registradoPor: registradoPor,
+    bool salvando = false;
+    final confirmou = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDlg) {
+          return AlertDialog(
+            title: Text(widget.saida != null ? 'Confirmar alteracao' : 'Confirmar cadastro'),
+            content: Text('Deseja ${widget.saida != null ? 'salvar as alteracoes' : 'cadastrar a saida'}?'),
+            actions: [
+              TextButton(
+                onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: salvando
+                    ? null
+                    : () async {
+                        setDlg(() => salvando = true);
+                        try {
+                          final existing = widget.saida;
+                          if (existing != null) {
+                            final item = _itens.first;
+                            final saidaAtualizada = Saida(
+                              id: existing.id,
+                              idMaterial: item.material.id!,
+                              idCliente: _clienteSelecionado!.id!,
+                              numeroLote: null,
+                              pesosJson: item.pesos,
+                              precoUnitario: item.precoUnitario,
+                              qtdPesagens: null,
+                              peso: item.pesoTotal,
+                              valorTotal: null,
+                              data: dataStr,
+                              registradoPor: registradoPor,
+                            );
+                            await _saidaService.atualizar(saidaAtualizada);
+                          } else {
+                            for (final item in _itens) {
+                              final nova = Saida(
+                                id: null,
+                                idMaterial: item.material.id!,
+                                idCliente: _clienteSelecionado!.id!,
+                                numeroLote: null,
+                                pesosJson: item.pesos,
+                                precoUnitario: item.precoUnitario,
+                                qtdPesagens: null,
+                                peso: item.pesoTotal,
+                                valorTotal: null,
+                                data: dataStr,
+                                registradoPor: registradoPor,
+                              );
+                              await _saidaService.adicionar(nova);
+                            }
+                          }
+                          if (mounted) Navigator.pop(ctx, true);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: _deleteColor,
+                                content: Text('Erro ao salvar: $e'),
+                              ),
+                            );
+                          }
+                          setDlg(() => salvando = false);
+                        }
+                      },
+                child: salvando
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Salvar'),
+              ),
+            ],
           );
-          await _saidaService.adicionar(nova);
-        }
-      }
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: _deleteColor,
-          content: Text('Erro ao salvar: $e'),
-        ),
-      );
-    }
+        });
+      },
+    );
+    if (confirmou != true) return;
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -444,9 +477,16 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
     Future<void> go(int index) async {
       final user = await _auth.currentUser();
       final display = (user?['nome'] ?? user?['username'] ?? '') as String;
+      final role = (user?['role'] ?? 'admin') as String;
       if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuScreen(username: display, initialIndex: index)),
+        MaterialPageRoute(
+          builder: (_) => MenuScreen(
+            username: display,
+            role: role,
+            initialIndex: _resolveMenuIndex(role, index),
+          ),
+        ),
         (route) => false,
       );
     }
@@ -483,6 +523,13 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
         ),
       ),
     );
+  }
+
+  int _resolveMenuIndex(String role, int requested) {
+    if (role.toLowerCase() == 'admin') return requested;
+    if (requested < 0) return 0;
+    if (requested > 2) return 2;
+    return requested;
   }
 
   Widget _buildResumo() {

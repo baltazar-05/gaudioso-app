@@ -1,51 +1,23 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:gaudioso_app/core/api_config.dart';
+import 'package:gaudioso_app/services/api_service.dart';
 import '../models/entrada.dart';
 
 class EntradaService {
-  static final baseUrl = ApiConfig.endpoint('/api/entradas');
-  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
+  static const _path = '/api/entradas';
 
   Future<List<Entrada>> listar() async {
-    final res = await http.get(Uri.parse(baseUrl));
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Entrada.fromJson(e)).toList();
-    }
-    throw Exception("Erro ao listar entradas: ${res.statusCode}");
+    final data = await ApiService.getJson(_path) as List<dynamic>;
+    return data.map((e) => Entrada.fromJson(e)).toList();
   }
 
   Future<void> adicionar(Entrada e) async {
-    final res = await http.post(
-      Uri.parse(baseUrl),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(e.toJson()),
-    );
-    if (res.statusCode != 201 && res.statusCode != 200) {
-      final body = res.body;
-      throw Exception("Erro ao adicionar entrada (HTTP ${res.statusCode}): $body");
-    }
+    await ApiService.postJson(_path, e.toJson());
   }
 
   Future<void> atualizar(Entrada e) async {
-    final res = await http.put(
-      Uri.parse("$baseUrl/${e.id}"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(e.toJson()),
-    );
-    if (res.statusCode != 200) {
-      final body = res.body;
-      throw Exception("Erro ao atualizar entrada (HTTP ${res.statusCode}): $body");
-    }
+    await ApiService.putJson('$_path/${e.id}', e.toJson());
   }
 
   Future<void> excluir(int id) async {
-    final res = await http.delete(Uri.parse("$baseUrl/$id"));
-    if (res.statusCode != 204 && res.statusCode != 200) {
-      final body = res.body;
-      throw Exception("Erro ao excluir entrada (HTTP ${res.statusCode}): $body");
-    }
+    await ApiService.delete('$_path/$id');
   }
 }

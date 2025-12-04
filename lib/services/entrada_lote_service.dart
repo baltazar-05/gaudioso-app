@@ -1,40 +1,28 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import 'package:gaudioso_app/core/api_config.dart';
+import 'package:gaudioso_app/services/api_service.dart';
 import '../models/lote_entrada_resumo.dart';
 import '../models/entrada.dart';
 import 'entrada_service.dart';
 
 class EntradaLoteService {
-  static final _base = ApiConfig.endpoint('/api/entradas/lotes');
+  static const _path = '/api/entradas/lotes';
 
   Future<List<LoteEntradaResumo>> listar({DateTime? dia, DateTime? ini, DateTime? fim}) async {
     final params = <String, String>{};
     if (dia != null) {
-      final y = dia.year.toString().padLeft(4, '0');
-      final m = dia.month.toString().padLeft(2, '0');
-      final d = dia.day.toString().padLeft(2, '0');
-      params['dia'] = '$y-$m-$d';
+      params['dia'] = _dateOnly(dia);
     } else if (ini != null && fim != null) {
-      final i = DateTime(ini.year, ini.month, ini.day, 0, 0, 0);
-      final f = DateTime(fim.year, fim.month, fim.day, 23, 59, 59, 999);
-      params['ini'] = i.toIso8601String();
-      params['fim'] = f.toIso8601String();
+      params['ini'] = DateTime(ini.year, ini.month, ini.day, 0, 0, 0).toIso8601String();
+      params['fim'] = DateTime(fim.year, fim.month, fim.day, 23, 59, 59, 999).toIso8601String();
     }
-    final url = params.isEmpty
-        ? _base
-        : '$_base?${params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
     try {
-      final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
+      final data = await ApiService.getJson(_path, query: params);
+      if (data is List) {
         return data.map((e) => LoteEntradaResumo.fromJson(e as Map<String, dynamic>)).toList();
       }
-      // Fallback: agrega localmente quando o endpoint do lote falhar
+      // formato inesperado cai no fallback local
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     } catch (_) {
-      // Fallback em exceção de rede
+      // fallback local quando API falhar
       return _listarFallback(dia: dia, ini: ini, fim: fim);
     }
   }
@@ -52,22 +40,24 @@ class EntradaLoteService {
       }).toList();
     }
 
-    var url = '$_base/${Uri.encodeComponent(numeroLote)}';
     try {
-      var res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
+      final data = await ApiService.getJson('$_path/${Uri.encodeComponent(numeroLote)}');
+      if (data is List) {
         return data.map((e) => Entrada.fromJson(e)).toList();
       }
-      url = ApiConfig.endpoint('/api/entradas?lote=${Uri.encodeQueryComponent(numeroLote)}');
-      res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List;
+    } catch (_) {
+      // tenta endpoint alternativo
+    }
+
+    try {
+      final data = await ApiService.getJson('/api/entradas', query: {'lote': numeroLote});
+      if (data is List) {
         return data.map((e) => Entrada.fromJson(e)).toList();
       }
     } catch (_) {
       // cai no fallback local
     }
+
     // Fallback local: lista todas as entradas e filtra pelo lote
     final todas = await EntradaService().listar();
     return todas.where((e) => (e.numeroLote ?? '').trim() == numeroLote).toList();
@@ -77,25 +67,22 @@ class EntradaLoteService {
     if (numeroAntigo.startsWith('local:')) {
       throw Exception('Operacao indisponivel para lotes locais');
     }
-    final url = '$_base/${Uri.encodeComponent(numeroAntigo)}';
-    final res = await http.put(
-      Uri.parse(url),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"novoNumeroLote": numeroNovo}),
+    await ApiService.putJson(
+      '$_path/${Uri.encodeComponent(numeroAntigo)}',
+      {"novoNumeroLote": numeroNovo},
     );
-    if (res.statusCode != 200 && res.statusCode != 204) {
-      throw Exception('Erro ao renomear lote (entradas): HTTP ${res.statusCode} - ${res.body}');
-    }
   }
 
   Future<void> excluir(String numeroLote) async {
     if (numeroLote.startsWith('local:')) {
       throw Exception('Operacao indisponivel para lotes locais');
     }
-    final url = '$_base/${Uri.encodeComponent(numeroLote)}';
-    final res = await http.delete(Uri.parse(url));
-    if (res.statusCode == 200 || res.statusCode == 204) return;
-    // Fallback: excluir item a item
+    try {
+      await ApiService.delete('$_path/${Uri.encodeComponent(numeroLote)}');
+      return;
+    } catch (_) {
+      // Fallback: excluir item a item
+    }
     try {
       final itens = await itensDoLote(numeroLote);
       final entradaService = EntradaService();
@@ -105,7 +92,7 @@ class EntradaLoteService {
         }
       }
     } catch (e) {
-      throw Exception('Erro ao excluir lote (fallback itens - entradas): $e | HTTP ${res.statusCode} - ${res.body}');
+      throw Exception('Erro ao excluir lote (fallback itens - entradas): $e');
     }
   }
 
@@ -163,6 +150,13 @@ class EntradaLoteService {
       return bd.compareTo(ad);
     });
     return result;
+  }
+
+  String _dateOnly(DateTime d) {
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
   }
 
   // Helpers para lotes locais

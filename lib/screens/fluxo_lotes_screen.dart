@@ -25,9 +25,9 @@ class FluxoLotesScreen extends StatelessWidget {
             ),
           ),
           bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
+            indicatorColor: Color.fromARGB(255, 0, 0, 0),
+            labelColor: Color.fromARGB(255, 0, 0, 0),
+            unselectedLabelColor: Color.fromARGB(160, 0, 0, 0),
             tabs: [
               Tab(text: 'Entradas'),
               Tab(text: 'Saídas'),

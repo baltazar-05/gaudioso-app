@@ -1,58 +1,31 @@
-import 'dart:convert';
 import 'dart:developer' show log;
-import 'package:http/http.dart' as http;
 
-import 'package:gaudioso_app/core/api_config.dart';
+import 'package:gaudioso_app/services/api_service.dart';
 import '../models/cliente.dart';
 
 class ClienteService {
-  static final baseUrl = ApiConfig.endpoint('/api/clientes');
-  // Use --dart-define=API_BASE to override the base URL when deploying remotely.
-  // 👉 se for celular físico, use o IP da sua máquina (ex: http://192.168.0.10:8080/api/clientes)
+  static const _path = '/api/clientes';
 
-  Future<List<Cliente>> listar() async {
-    final res = await http.get(Uri.parse(baseUrl));
-    log("Resposta clientes: ${res.statusCode} - ${res.body}"); // debug
-
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as List;
-      return data.map((e) => Cliente.fromJson(e)).toList();
-    }
-    throw Exception("Erro ao listar clientes: ${res.statusCode}");
+  Future<List<Cliente>> listar({bool? ativo = true}) async {
+    final query = ativo == null ? '' : '?ativo=${ativo ? 'true' : 'false'}';
+    final data = await ApiService.getJson('$_path$query') as List<dynamic>;
+    log('Clientes carregados: ${data.length}');
+    return data.map((e) => Cliente.fromJson(e)).toList();
   }
 
   Future<void> adicionar(Cliente c) async {
-    final res = await http.post(
-      Uri.parse(baseUrl),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(c.toJson()),
-    );
-    log("Adicionar cliente: ${res.statusCode} - ${res.body}"); // debug
-
-    if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception("Erro ao adicionar cliente");
-    }
+    await ApiService.postJson(_path, c.toJson());
   }
 
   Future<void> atualizar(Cliente c) async {
-    final res = await http.put(
-      Uri.parse("$baseUrl/${c.id}"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(c.toJson()),
-    );
-    log("Atualizar cliente: ${res.statusCode} - ${res.body}"); // debug
-
-    if (res.statusCode != 200) {
-      throw Exception("Erro ao atualizar cliente");
-    }
+    await ApiService.putJson('$_path/${c.id}', c.toJson());
   }
 
-  Future<void> excluir(int id) async {
-    final res = await http.delete(Uri.parse("$baseUrl/$id"));
-    log("Excluir cliente: ${res.statusCode}"); // debug
+  Future<void> inativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": false});
+  }
 
-    if (res.statusCode != 204 && res.statusCode != 200) {
-      throw Exception("Erro ao excluir cliente");
-    }
+  Future<void> reativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": true});
   }
 }

@@ -1,15 +1,15 @@
 class LucroRealData {
   final DateTime dataInicio;
   final DateTime dataFim;
-  final double totalCompra;
-  final double totalVenda;
-  final double lucroBruto;
-  final double despesas;
-  final double lucroLiquido;
-  final double margemLucro;
-  final double totalPesoComprado;
-  final double totalPesoVendido;
-  final double diferencaPeso;
+  final double? totalCompra;
+  final double? totalVenda;
+  final double? lucroBruto;
+  final double? despesas;
+  final double? lucroLiquido;
+  final double? margemLucro;
+  final double? totalPesoComprado;
+  final double? totalPesoVendido;
+  final double? diferencaPeso;
   final List<LucroRealMaterial> materiais;
 
   const LucroRealData({
@@ -49,11 +49,11 @@ class LucroRealData {
 
 class LucroRealMaterial {
   final String nome;
-  final double pesoComprado;
-  final double pesoVendido;
-  final double precoCompra;
-  final double precoVenda;
-  final double lucro;
+  final double? pesoComprado;
+  final double? pesoVendido;
+  final double? precoCompra;
+  final double? precoVenda;
+  final double? lucro;
 
   const LucroRealMaterial({
     required this.nome,
@@ -76,8 +76,8 @@ class LucroRealMaterial {
   }
 }
 
-double _toDouble(dynamic value) {
-  if (value == null) return 0;
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
   if (value is num) return value.toDouble();
-  return double.tryParse(value.toString()) ?? 0;
+  return double.tryParse(value.toString());
 }

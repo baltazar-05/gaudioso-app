@@ -143,49 +143,82 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     final registroBase = widget.entrada != null ? _registroData : DateTime.now();
     final dataStr = _formatForApi(registroBase);
 
-    try {
-      final existing = widget.entrada;
-      if (existing != null) {
-        final item = _itens.first;
-        final entradaAtualizada = Entrada(
-          id: existing.id,
-          idMaterial: item.material.id!,
-          idFornecedor: _fornecedorSelecionado!.id!,
-          numeroLote: null,
-          pesosJson: item.pesos,
-          precoUnitario: item.precoUnitario,
-          qtdPesagens: null,
-          peso: item.pesoTotal,
-          valorTotal: null,
-          data: dataStr,
-          registradoPor: registradoPor,
-        );
-        await _entradaService.atualizar(entradaAtualizada);
-      } else {
-        for (final item in _itens) {
-          final nova = Entrada(
-            id: null,
-            idMaterial: item.material.id!,
-            idFornecedor: _fornecedorSelecionado!.id!,
-            numeroLote: null,
-            pesosJson: item.pesos,
-            precoUnitario: item.precoUnitario,
-            qtdPesagens: null,
-            peso: item.pesoTotal,
-            valorTotal: null,
-            data: dataStr,
-            registradoPor: registradoPor,
+    bool salvando = false;
+    final confirmou = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDlg) {
+          return AlertDialog(
+            title: Text(widget.entrada != null ? 'Confirmar alteracao' : 'Confirmar cadastro'),
+            content: Text('Deseja ${widget.entrada != null ? 'salvar as alteracoes' : 'cadastrar a entrada'}?'),
+            actions: [
+              TextButton(
+                onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: salvando
+                    ? null
+                    : () async {
+                        setDlg(() => salvando = true);
+                        try {
+                          final existing = widget.entrada;
+                          if (existing != null) {
+                            final item = _itens.first;
+                            final entradaAtualizada = Entrada(
+                              id: existing.id,
+                              idMaterial: item.material.id!,
+                              idFornecedor: _fornecedorSelecionado!.id!,
+                              numeroLote: null,
+                              pesosJson: item.pesos,
+                              precoUnitario: item.precoUnitario,
+                              qtdPesagens: null,
+                              peso: item.pesoTotal,
+                              valorTotal: null,
+                              data: dataStr,
+                              registradoPor: registradoPor,
+                            );
+                            await _entradaService.atualizar(entradaAtualizada);
+                          } else {
+                            for (final item in _itens) {
+                              final nova = Entrada(
+                                id: null,
+                                idMaterial: item.material.id!,
+                                idFornecedor: _fornecedorSelecionado!.id!,
+                                numeroLote: null,
+                                pesosJson: item.pesos,
+                                precoUnitario: item.precoUnitario,
+                                qtdPesagens: null,
+                                peso: item.pesoTotal,
+                                valorTotal: null,
+                                data: dataStr,
+                                registradoPor: registradoPor,
+                              );
+                              await _entradaService.adicionar(nova);
+                            }
+                          }
+                          if (mounted) Navigator.pop(ctx, true);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(backgroundColor: _deleteColor, content: Text('Erro ao salvar: $e')),
+                            );
+                          }
+                          setDlg(() => salvando = false);
+                        }
+                      },
+                child: salvando
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Salvar'),
+              ),
+            ],
           );
-          await _entradaService.adicionar(nova);
-        }
-      }
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: _deleteColor, content: Text('Erro ao salvar: $e')),
-      );
-    }
+        });
+      },
+    );
+    if (confirmou != true) return;
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -229,15 +262,15 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       child: Scaffold(
         backgroundColor: bg,
         appBar: AppBar(
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          title: Row(
+        backgroundColor: _primaryColor,
+        foregroundColor: Colors.black,
+        centerTitle: true,
+        title: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(editando ? LucideIcons.pencil : LucideIcons.plus, size: 22, color: Colors.white),
+              Icon(editando ? LucideIcons.pencil : LucideIcons.plus, size: 22, color: const Color.fromARGB(255, 0, 0, 0)),
               const SizedBox(width: 8),
-              Text(editando ? 'Editar Entrada' : 'Nova Entrada', style: _poppins(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.white)),
+              Text(editando ? 'Editar Entrada' : 'Nova Entrada', style: _poppins(fontSize: 22, fontWeight: FontWeight.w500, color: const Color.fromARGB(255, 0, 0, 0))),
             ],
           ),
         ),
@@ -300,8 +333,8 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                             alignment: Alignment.centerLeft,
                             child: ElevatedButton.icon(
                               onPressed: _abrirEditorItem,
-                              icon: const Icon(LucideIcons.plus, color: Colors.white),
-                              label: Text('Adicionar item', style: _poppins(color: Colors.white)),
+                              icon: const Icon(LucideIcons.plus, color: Color.fromARGB(255, 0, 0, 0)),
+                              label: Text('Adicionar item', style: _poppins(color: const Color.fromARGB(255, 0, 0, 0))),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -309,8 +342,8 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
                             onPressed: _salvar,
-                            icon: const Icon(LucideIcons.save, color: Colors.white),
-                            label: Text(editando ? 'Salvar alterações' : 'Salvar', style: _poppins(color: Colors.white)),
+                            icon: const Icon(LucideIcons.save, color: Color.fromARGB(255, 0, 0, 0)),
+                            label: Text(editando ? 'Salvar alterações' : 'Salvar', style: _poppins(color: const Color.fromARGB(255, 0, 0, 0))),
                           ),
                         ],
                       ),
@@ -328,9 +361,16 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     Future<void> go(int index) async {
       final user = await _auth.currentUser();
       final display = (user?['nome'] ?? user?['username'] ?? '') as String;
+      final role = (user?['role'] ?? 'admin') as String;
       if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuScreen(username: display, initialIndex: index)),
+        MaterialPageRoute(
+          builder: (_) => MenuScreen(
+            username: display,
+            role: role,
+            initialIndex: _resolveMenuIndex(role, index),
+          ),
+        ),
         (route) => false,
       );
     }
@@ -369,6 +409,13 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     );
   }
 
+  int _resolveMenuIndex(String role, int requested) {
+    if (role.toLowerCase() == 'admin') return requested;
+    if (requested < 0) return 0;
+    if (requested > 2) return 2;
+    return requested;
+  }
+
   Widget _buildResumo() {
     final totalPesagens = _itens.fold<int>(0, (acc, item) => acc + item.bagCount);
     final totalPeso = _itens.fold<double>(0, (acc, item) => acc + item.pesoTotal);
@@ -405,7 +452,7 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
         children: [
           _CircleIconButton(
             icon: LucideIcons.pencil,
-            iconColor: _iconColor,
+            iconColor: const Color.fromARGB(255, 0, 0, 0),
             tooltip: 'Editar item',
             onTap: () => _abrirEditorItem(item: item, index: index),
           ),
@@ -414,7 +461,7 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.material.nome, style: TextStyle(color: _textColor, fontSize: 16)),
+                Text(item.material.nome, style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0), fontSize: 16)),
                 const SizedBox(height: 4),
                 Text('Pesagens: ${item.bagCount}   |   Peso total: ${item.pesoTotal.toStringAsFixed(2)} kg', style: _poppins(color: _textColor.withValues(alpha: 0.85))),
                 const SizedBox(height: 2),
@@ -440,11 +487,10 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
     );
   }
 
-  Future<void> _abrirEditorItem({ _EntradaItem? item, int? index }) async {
-    final materiais = _materiais;
-    MaterialItem? materialSel = item?.material ?? (materiais.isNotEmpty ? materiais.first : null);
-    final pesosCtrl = TextEditingController(text: item != null ? item.pesos.map((e) => e.toStringAsFixed(2)).join(' + ') : '');
-    double precoSel = item?.precoUnitario ?? (materialSel?.precoCompra ?? 0);
+  Future<void> _abrirEditorItem({_EntradaItem? item, int? index}) async {
+    MaterialItem? materialSel = item?.material ?? (_materiais.isNotEmpty ? _materiais.first : null);
+    final pesosCtrl = TextEditingController(text: item?.pesos.map((p) => p.toStringAsFixed(2)).join(' + ') ?? '');
+    final precoCtrl = TextEditingController(text: (item?.precoUnitario ?? materialSel?.precoCompra ?? 0).toStringAsFixed(2));
 
     await showModalBottomSheet(
       context: context,
@@ -454,64 +500,129 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
+            final labelStyle = Theme.of(ctx).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
+            final pesos = _parsePesos(pesosCtrl.text);
+            final pesoTotal = pesos.fold<double>(0, (sum, p) => sum + p);
+            final bagCount = pesos.length;
+            final precoUnitario = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? 0;
+            final valorTotal = precoUnitario * pesoTotal;
+
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
               child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Material', style: _poppins(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      DropdownButtonFormField<MaterialItem>(
-                        initialValue: materialSel,
-                        items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
-                        onChanged: (m) => setModal(() { materialSel = m; precoSel = m?.precoCompra ?? precoSel; }),
-                        decoration: const InputDecoration(border: OutlineInputBorder(), filled: true),
-                      ),
-                      const SizedBox(height: 12),
-                      Text('Pesos (kg) — separe com +', style: _poppins(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: pesosCtrl,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'ex.: 12.5 + 7.30 + 3'),
-                        keyboardType: TextInputType.text,
-                      ),
-                      const SizedBox(height: 12),
-                      Text('Preço unitário (R\$)', style: _poppins(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        initialValue: precoSel.toStringAsFixed(2),
-                        decoration: const InputDecoration(border: OutlineInputBorder()),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (v) => setModal(() => precoSel = double.tryParse(v.replaceAll(',', '.')) ?? precoSel),
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final material = materialSel;
-                            if (material == null) return;
-                            final pesos = _parsePesos(pesosCtrl.text);
-                            if (pesos.isEmpty) return;
-                            setState(() {
-                              final novo = _EntradaItem(material: material, pesos: pesos, precoUnitario: precoSel);
-                              if (index != null && index >= 0 && index < _itens.length) {
-                                _itens[index] = novo;
-                              } else {
-                                _itens.add(novo);
-                              }
-                            });
-                            Navigator.pop(ctx);
-                          },
-                          child: Text('Salvar item', style: _poppins(color: Colors.white)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Item da entrada', style: Theme.of(context).textTheme.titleMedium),
                         ),
+                        _CircleIconButton(
+                          icon: LucideIcons.x,
+                          iconColor: _textColor,
+                          tooltip: 'Fechar',
+                          onTap: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Material', style: labelStyle),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<MaterialItem>(
+                          initialValue: materialSel,
+                          decoration: const InputDecoration(
+                            hintText: 'Selecione um material',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          items: _materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
+                          onChanged: (value) {
+                            materialSel = value;
+                            if (materialSel != null) {
+                              precoCtrl.text = materialSel!.precoCompra.toStringAsFixed(2);
+                            }
+                            setModal(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Pesagens (ex: 23+52+45)', style: labelStyle),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: pesosCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Informe as pesagens separadas por +',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          onChanged: (_) => setModal(() {}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Preco unitario (R\$)', style: labelStyle),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: precoCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
+                            hintText: 'Informe o preco unitario',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          onChanged: (_) => setModal(() {}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Pesagens: $bagCount   |   Peso total: ${pesoTotal.toStringAsFixed(2)} kg'),
+                    Text('Valor total: R\$ ${valorTotal.toStringAsFixed(2)}'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
                       ),
-                    ],
-                  ),
+                      onPressed: () {
+                        final material = materialSel;
+                        if (material == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selecione o material')));
+                          return;
+                        }
+                        final pesosValidos = _parsePesos(pesosCtrl.text);
+                        if (pesosValidos.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe ao menos uma pesagem valida')));
+                          return;
+                        }
+                        final preco = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? 0;
+                        if (preco <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe um preco valido')));
+                          return;
+                        }
+                        final novo = _EntradaItem(material: material, pesos: pesosValidos, precoUnitario: preco);
+                        setState(() {
+                          if (index != null && index >= 0 && index < _itens.length) {
+                            _itens[index] = novo;
+                          } else {
+                            _itens.add(novo);
+                          }
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      child: Text('Salvar item', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87)),
+                    ),
+                  ],
                 ),
               ),
             );

@@ -32,7 +32,9 @@ class _ClientesScreenState extends State<ClientesScreen> {
 
   Future<void> carregar() async {
     try {
-      final data = await service.listar();
+      const docGenerico = 'GEN-CLIENTE';
+      final data = await service.listar(ativo: true);
+      data.removeWhere((c) => c.documento == docGenerico);
       if (!mounted) return;
       data.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
       setState(() {
@@ -247,16 +249,56 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                             color: deleteColor,
                                           ),
                                           onPressed: () async {
-                                            try {
-                                              await service.excluir(c.id!);
-                                              if (!context.mounted) return;
-                                              carregar();
-                                            } catch (e) {
-                                              if (!context.mounted) return;
+                                            bool salvando = false;
+                                            final ok = await showDialog<bool>(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (ctx) {
+                                                return StatefulBuilder(
+                                                  builder: (ctx, setDlg) {
+                                                    return AlertDialog(
+                                                      title: const Text('Inativar cliente'),
+                                                      content: Text('Deseja inativar "${c.nome}"?'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                                                          child: const Text('Cancelar'),
+                                                        ),
+                                                        FilledButton(
+                                                          onPressed: salvando
+                                                              ? null
+                                                              : () async {
+                                                                  setDlg(() => salvando = true);
+                                                                  try {
+                                                                    await service.inativar(c.id!);
+                                                                    if (mounted) Navigator.pop(ctx, true);
+                                                                  } catch (e) {
+                                                                    if (mounted) {
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        SnackBar(content: Text('Erro ao inativar: $e')),
+                                                                      );
+                                                                    }
+                                                                    setDlg(() => salvando = false);
+                                                                  }
+                                                                },
+                                                          child: salvando
+                                                              ? const SizedBox(
+                                                                  height: 18,
+                                                                  width: 18,
+                                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                                )
+                                                              : const Text('Inativar'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            );
+                                            if (ok == true && mounted) {
+                                              await carregar();
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Erro ao excluir: $e'),
-                                                ),
+                                                const SnackBar(content: Text('Cliente inativado')),
                                               );
                                             }
                                           },

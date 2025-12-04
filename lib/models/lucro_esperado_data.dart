@@ -1,10 +1,10 @@
 class LucroEsperadoData {
   final DateTime dataGeracao;
   final String usuarioSolicitante;
-  final double valorCustoTotal;
-  final double valorVendaTotal;
-  final double lucroEsperadoTotal;
-  final double margemEsperadaTotal;
+  final double? valorCustoTotal;
+  final double? valorVendaTotal;
+  final double? lucroEsperadoTotal;
+  final double? margemEsperadaTotal;
   final int quantidadeMateriais;
   final String materialMaisRentavel;
   final String materialMenosRentavel;
@@ -49,13 +49,13 @@ class LucroEsperadoData {
 
 class LucroEsperadoMaterial {
   final String nome;
-  final double pesoEstoque;
-  final double precoCompra;
-  final double precoVenda;
-  final double valorCusto;
-  final double valorVenda;
-  final double lucroEsperado;
-  final double margemEsperada;
+  final double? pesoEstoque;
+  final double? precoCompra;
+  final double? precoVenda;
+  final double? valorCusto;
+  final double? valorVenda;
+  final double? lucroEsperado;
+  final double? margemEsperada;
 
   const LucroEsperadoMaterial({
     required this.nome,
@@ -82,8 +82,8 @@ class LucroEsperadoMaterial {
   }
 }
 
-double _toDouble(dynamic value) {
-  if (value == null) return 0;
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
   if (value is num) return value.toDouble();
-  return double.tryParse(value.toString()) ?? 0;
+  return double.tryParse(value.toString());
 }
