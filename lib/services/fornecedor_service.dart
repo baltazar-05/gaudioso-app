@@ -4,8 +4,9 @@ import '../models/fornecedor.dart';
 class FornecedorService {
   static const _path = '/api/fornecedores';
 
-  Future<List<Fornecedor>> listar() async {
-    final data = await ApiService.getJson(_path) as List<dynamic>;
+  Future<List<Fornecedor>> listar({bool? ativo = true}) async {
+    final query = ativo == null ? '' : '?ativo=${ativo ? 'true' : 'false'}';
+    final data = await ApiService.getJson('$_path$query') as List<dynamic>;
     return data.map((e) => Fornecedor.fromJson(e)).toList();
   }
 
@@ -17,7 +18,11 @@ class FornecedorService {
     await ApiService.putJson('$_path/${f.id}', f.toJson());
   }
 
-  Future<void> excluir(int id) async {
-    await ApiService.delete('$_path/$id');
+  Future<void> inativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": false});
+  }
+
+  Future<void> reativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": true});
   }
 }

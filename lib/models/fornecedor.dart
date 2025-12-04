@@ -4,6 +4,7 @@ class Fornecedor {
   final String documento;
   final String telefone;
   final String endereco;
+  final bool ativo;
 
   Fornecedor({
     this.id,
@@ -11,6 +12,7 @@ class Fornecedor {
     required this.documento,
     required this.telefone,
     required this.endereco,
+    this.ativo = true,
   });
 
   factory Fornecedor.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Fornecedor {
       documento: json['documento'],
       telefone: json['telefone'] ?? '',
       endereco: json['endereco'] ?? '',
+      ativo: json['ativo'] != null ? json['ativo'] == true || json['ativo'] == 1 || json['ativo'] == '1' : true,
     );
   }
 
@@ -29,5 +32,6 @@ class Fornecedor {
         "documento": documento,
         "telefone": telefone,
         "endereco": endereco,
+        "ativo": ativo,
       };
 }

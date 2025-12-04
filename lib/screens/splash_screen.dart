@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
-import 'package:gaudioso_app/screens/login/login_screen.dart';
+import 'login/login_screen.dart';
 import 'menu_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,8 +11,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fade;
   late final Animation<double> _scale;
@@ -34,12 +33,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _start() async {
     _controller.forward();
-    // Autenticação em paralelo à animação
-    final user = await _auth.currentUser();
+    // Autenticacao em paralelo a animacao
+    final user = await _auth.bootstrapUser() ?? await _auth.currentUser();
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     final destination = (user != null && user.isNotEmpty)
-        ? MenuScreen(username: (user['nome'] ?? user['username'] ?? '') as String)
+        ? MenuScreen(
+            username: (user['nome'] ?? user['username'] ?? '') as String,
+            role: (user['role'] ?? 'admin') as String,
+          )
         : const LoginScreen();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => destination),
@@ -65,17 +67,14 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('♻️', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.onSurface)),
+                Text('♻', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 72, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 8),
                 Text(
                   'Gaudioso Reciclagens',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w400,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.87),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.87),
                       ),
                 ),
               ],

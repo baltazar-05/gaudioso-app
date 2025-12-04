@@ -22,11 +22,21 @@ class RelatorioService {
     throw Exception('Resposta inesperada ao gerar relatorio');
   }
 
-  Future<Uint8List> gerarPdf(String dataInicio, String dataFim, {String? usuario}) {
+  Future<Uint8List> gerarPdf(
+    String dataInicio,
+    String dataFim, {
+    String? usuario,
+    String? idMaterial,
+    String? idResponsavel,
+    String? idCliente,
+  }) {
     final query = _query({
       'dataInicio': dataInicio,
       'dataFim': dataFim,
       'usuario': usuario,
+      'idMaterial': idMaterial,
+      'idResponsavel': idResponsavel,
+      'idCliente': idCliente,
     });
     return ApiService.getBytes('$_path/lucro/pdf', query: query, accept: 'application/pdf');
   }
@@ -45,10 +55,19 @@ class RelatorioService {
     return ApiService.getBytes('$_path/lucro-esperado/pdf', query: query, accept: 'application/pdf');
   }
 
-  Future<LucroRealData> buscarLucroRealResumo(String dataInicio, String dataFim) async {
+  Future<LucroRealData> buscarLucroRealResumo(
+    String dataInicio,
+    String dataFim, {
+    String? idMaterial,
+    String? idResponsavel,
+    String? idCliente,
+  }) async {
     final query = _query({
       'dataInicio': dataInicio,
       'dataFim': dataFim,
+      'idMaterial': idMaterial,
+      'idResponsavel': idResponsavel,
+      'idCliente': idCliente,
     });
     final data = await ApiService.getJson('$_path/lucro', query: query);
     if (data is Map<String, dynamic>) {

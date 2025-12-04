@@ -61,15 +61,59 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
           double.tryParse(_precoCompraCtrl.text.replaceAll(',', '.')) ?? 0,
       precoVenda:
           double.tryParse(_precoVendaCtrl.text.replaceAll(',', '.')) ?? 0,
+      ativo: widget.item?.ativo ?? true,
     );
 
-    if (widget.item == null) {
-      await _service.adicionar(item);
-    } else {
-      await _service.atualizar(item);
-    }
-
-    if (mounted) Navigator.pop(context, true);
+    bool salvando = false;
+    final confirmou = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDlg) {
+            final editando = widget.item != null;
+            return AlertDialog(
+              title: Text(editando ? 'Confirmar alteracao' : 'Confirmar cadastro'),
+              content: Text(
+                'Deseja ${editando ? 'salvar as alteracoes' : 'cadastrar o novo material'}?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: salvando
+                      ? null
+                      : () async {
+                          setDlg(() => salvando = true);
+                          try {
+                            if (widget.item == null) {
+                              await _service.adicionar(item);
+                            } else {
+                              await _service.atualizar(item);
+                            }
+                            if (mounted) Navigator.pop(ctx, true);
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Erro ao salvar: $e')),
+                              );
+                            }
+                            setDlg(() => salvando = false);
+                          }
+                        },
+                  child: salvando
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Salvar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (confirmou == true && mounted) Navigator.pop(context, true);
   }
 
   @override

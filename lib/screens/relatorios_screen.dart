@@ -7,6 +7,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/cliente.dart';
+import '../models/material.dart';
+import '../services/cliente_service.dart';
+import '../services/material_service.dart';
 import '../services/relatorio_service.dart';
 import 'menu_screen.dart';
 
@@ -93,12 +97,19 @@ class _RelatorioPanel extends StatelessWidget {
 class _RelatorioBottomBar extends StatelessWidget {
   final int currentIndex;
   final String username;
-  const _RelatorioBottomBar({required this.currentIndex, required this.username});
+  final String role;
+  const _RelatorioBottomBar({required this.currentIndex, required this.username, this.role = 'admin'});
 
   void _go(BuildContext context, int index) {
     if (index == currentIndex) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => MenuScreen(username: username, initialIndex: index)),
+      MaterialPageRoute(
+        builder: (_) => MenuScreen(
+          username: username,
+          role: role,
+          initialIndex: _resolveMenuIndex(role, index),
+        ),
+      ),
       (route) => false,
     );
   }
@@ -119,7 +130,7 @@ class _RelatorioBottomBar extends StatelessWidget {
             children: [
               Icon(icon, color: selected ? active : inactive, size: 22),
               const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 11, color: selected ? active : inactive)),
+              Text(label, style: TextStyle(fontSize: 12, color: selected ? active : inactive)),
             ],
           ),
         ),
@@ -128,7 +139,6 @@ class _RelatorioBottomBar extends StatelessWidget {
 
     return BottomAppBar(
       color: Colors.white,
-      elevation: 8,
       child: SizedBox(
         height: 64,
         child: Row(
@@ -143,12 +153,20 @@ class _RelatorioBottomBar extends StatelessWidget {
       ),
     );
   }
+
+  int _resolveMenuIndex(String role, int requested) {
+    if (role.toLowerCase() == 'admin') return requested;
+    if (requested < 0) return 0;
+    if (requested > 2) return 2;
+    return requested;
+  }
 }
 
 class RelatoriosScreen extends StatelessWidget {
   final String username;
+  final String role;
   final bool hideBottomBar;
-  const RelatoriosScreen({super.key, required this.username, this.hideBottomBar = false});
+  const RelatoriosScreen({super.key, required this.username, required this.role, this.hideBottomBar = false});
 
   static final _relatorios = [
     _RelatorioTipo(
@@ -175,7 +193,7 @@ class RelatoriosScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildRelatorioAppBar('Relatorios'),
-      bottomNavigationBar: hideBottomBar ? null : _RelatorioBottomBar(currentIndex: 3, username: username),
+      bottomNavigationBar: hideBottomBar ? null : _RelatorioBottomBar(currentIndex: 3, username: username, role: role),
       body: _relatorioBackground(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -272,13 +290,159 @@ class RelatorioLucroRealPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _RelatorioLucroRealForm(username: username);
+  }
+}
+
+class _RelatorioLucroRealForm extends StatefulWidget {
+  final String username;
+  const _RelatorioLucroRealForm({required this.username});
+
+  @override
+  State<_RelatorioLucroRealForm> createState() => _RelatorioLucroRealFormState();
+}
+
+class _RelatorioLucroRealFormState extends State<_RelatorioLucroRealForm> {
+  final _materialService = MaterialService();
+  final _clienteService = ClienteService();
+  late Future<_FiltroDados> _futuro;
+  final _responsavelCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _futuro = _carregar();
+  }
+
+  Future<_FiltroDados> _carregar() async {
+    final mats = await _materialService.listar();
+    final clientes = await _clienteService.listar();
+    return _FiltroDados(materiais: mats, clientes: clientes);
+  }
+
+  @override
+  void dispose() {
+    _responsavelCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final service = RelatorioService();
     return _RelatorioBasePage(
-      username: username,
+      username: widget.username,
       title: 'Lucro Real',
-      description: 'Selecione o periodo e gere o PDF de lucro real (compras, vendas, despesas e margens).',
+      description: 'Selecione o periodo, filtros opcionais e gere o PDF de lucro real.',
       filePrefix: 'Relatorio_Lucro',
-      onGeneratePdf: (ini, fim) => service.gerarPdf(ini, fim, usuario: username),
+      filtrosBuilder: (ctx, filtros, refresh) {
+        return FutureBuilder<_FiltroDados>(
+          future: _futuro,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: LinearProgressIndicator(minHeight: 4),
+              );
+            }
+            if (snap.hasError || !snap.hasData) {
+              return Text(
+                'Falha ao carregar filtros: ${snap.error}',
+                style: const TextStyle(color: Colors.red),
+              );
+            }
+            final dados = snap.data!;
+            MaterialItem? matSel;
+            for (final m in dados.materiais) {
+              if (m.id?.toString() == filtros.idMaterial) {
+                matSel = m;
+                break;
+              }
+            }
+            Cliente? cliSel;
+            for (final c in dados.clientes) {
+              if (c.id?.toString() == filtros.idCliente) {
+                cliSel = c;
+                break;
+              }
+            }
+            if (filtros.idResponsavel != null &&
+                _responsavelCtrl.text.trim() != filtros.idResponsavel) {
+              _responsavelCtrl.text = filtros.idResponsavel!;
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<MaterialItem?>(
+                  value: matSel,
+                  decoration: const InputDecoration(
+                    labelText: 'Material',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<MaterialItem?>(
+                      value: null,
+                      child: Text('Todos os materiais'),
+                    ),
+                    ...dados.materiais.map(
+                      (m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(m.nome),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) => refresh(() {
+                    filtros.idMaterial = value?.id?.toString();
+                  }),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<Cliente?>(
+                  value: cliSel,
+                  decoration: const InputDecoration(
+                    labelText: 'Cliente',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<Cliente?>(
+                      value: null,
+                      child: Text('Todos os clientes'),
+                    ),
+                    ...dados.clientes.map(
+                      (c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(c.nome),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) => refresh(() {
+                    filtros.idCliente = value?.id?.toString();
+                  }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _responsavelCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'ID do responsavel',
+                    border: OutlineInputBorder(),
+                    hintText: 'Opcional',
+                  ),
+                  onChanged: (value) => refresh(() {
+                    filtros.idResponsavel = value.trim().isEmpty ? null : value.trim();
+                  }),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      onGeneratePdf: (ini, fim, filtros) => service.gerarPdf(
+        ini,
+        fim,
+        usuario: widget.username,
+        idMaterial: filtros.idMaterial,
+        idResponsavel: filtros.idResponsavel,
+        idCliente: filtros.idCliente,
+      ),
     );
   }
 }
@@ -296,7 +460,7 @@ class RelatorioLucroEsperadoPage extends StatelessWidget {
       description: 'Relatorio baseado no estoque atual. Nao requer selecao de datas.',
       filePrefix: 'Relatorio_Lucro_Esperado',
       requiresDateRange: false,
-      onGeneratePdf: (ini, fim) => service.gerarLucroEsperadoPdf(usuario: username, dataInicio: ini, dataFim: fim),
+      onGeneratePdf: (ini, fim, _) => service.gerarLucroEsperadoPdf(usuario: username, dataInicio: ini, dataFim: fim),
     );
   }
 }
@@ -313,7 +477,7 @@ class RelatorioMovimentacaoPage extends StatelessWidget {
       title: 'Movimentacao',
       description: 'Selecione o periodo e gere o PDF consolidado de entradas e saidas (pesos e valores).',
       filePrefix: 'Relatorio_Movimentacao',
-      onGeneratePdf: (ini, fim) => service.gerarMovimentacaoPdf(ini, fim),
+      onGeneratePdf: (ini, fim, _) => service.gerarMovimentacaoPdf(ini, fim),
     );
   }
 }
@@ -323,8 +487,9 @@ class _RelatorioBasePage extends StatefulWidget {
   final String title;
   final String description;
   final String filePrefix;
-  final Future<Uint8List> Function(String dataInicio, String dataFim) onGeneratePdf;
+  final Future<Uint8List> Function(String dataInicio, String dataFim, _FiltroValores filtros) onGeneratePdf;
   final bool requiresDateRange;
+  final Widget Function(BuildContext, _FiltroValores, void Function(VoidCallback))? filtrosBuilder;
 
   const _RelatorioBasePage({
     required this.username,
@@ -333,6 +498,7 @@ class _RelatorioBasePage extends StatefulWidget {
     required this.filePrefix,
     required this.onGeneratePdf,
     this.requiresDateRange = true,
+    this.filtrosBuilder,
   });
 
   @override
@@ -344,6 +510,7 @@ class _RelatorioBasePageState extends State<_RelatorioBasePage> {
   DateTime? inicio;
   DateTime? fim;
   bool baixando = false;
+  final _FiltroValores filtros = _FiltroValores();
 
   @override
   Widget build(BuildContext context) {
@@ -422,6 +589,15 @@ class _RelatorioBasePageState extends State<_RelatorioBasePage> {
                           ),
                         ),
                       ],
+                      if (widget.filtrosBuilder != null) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Filtros',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 8),
+                        widget.filtrosBuilder!(context, filtros, (fn) => setState(fn)),
+                      ],
                     ],
                   ),
                 ),
@@ -484,7 +660,7 @@ class _RelatorioBasePageState extends State<_RelatorioBasePage> {
     try {
       final ini = inicio != null ? _apiDate.format(inicio!) : '';
       final end = fim != null ? _apiDate.format(fim!) : '';
-      final bytes = await widget.onGeneratePdf(ini, end);
+      final bytes = await widget.onGeneratePdf(ini, end, filtros);
       final dir = await getTemporaryDirectory();
       final arquivo = File(
         "${dir.path}/${widget.filePrefix}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf",
@@ -577,4 +753,17 @@ class _RelatorioTipo {
     required this.descricao,
     required this.icone,
   });
+}
+
+class _FiltroDados {
+  final List<MaterialItem> materiais;
+  final List<Cliente> clientes;
+
+  _FiltroDados({required this.materiais, required this.clientes});
+}
+
+class _FiltroValores {
+  String? idMaterial;
+  String? idResponsavel;
+  String? idCliente;
 }

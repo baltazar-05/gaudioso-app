@@ -6,8 +6,9 @@ import '../models/cliente.dart';
 class ClienteService {
   static const _path = '/api/clientes';
 
-  Future<List<Cliente>> listar() async {
-    final data = await ApiService.getJson(_path) as List<dynamic>;
+  Future<List<Cliente>> listar({bool? ativo = true}) async {
+    final query = ativo == null ? '' : '?ativo=${ativo ? 'true' : 'false'}';
+    final data = await ApiService.getJson('$_path$query') as List<dynamic>;
     log('Clientes carregados: ${data.length}');
     return data.map((e) => Cliente.fromJson(e)).toList();
   }
@@ -20,7 +21,11 @@ class ClienteService {
     await ApiService.putJson('$_path/${c.id}', c.toJson());
   }
 
-  Future<void> excluir(int id) async {
-    await ApiService.delete('$_path/$id');
+  Future<void> inativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": false});
+  }
+
+  Future<void> reativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": true});
   }
 }

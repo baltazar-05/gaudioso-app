@@ -49,9 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final saved = await _auth.currentUser();
     if (!mounted) return;
     final displayName = (saved?['nome'] ?? saved?['username'] ?? loginId) as String;
+    final role = (saved?['role'] ?? 'admin') as String;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => MenuScreen(username: displayName)),
+      MaterialPageRoute(builder: (_) => MenuScreen(username: displayName, role: role)),
     );
   }
 
@@ -185,8 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _openFormModal(Color primaryGreen) {
     final modalHeight = MediaQuery.of(context).size.height * 0.78;
-    final mode = ValueNotifier<bool>(false); // false = login, true = cadastro
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -201,234 +200,127 @@ class _LoginScreenState extends State<LoginScreen> {
         height: modalHeight,
         child: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: ValueListenableBuilder<bool>(
-            valueListenable: mode,
-            builder: (context, isRegistering, __) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 16),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 280),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: isRegistering
-                            ? Column(
-                                key: const ValueKey('register_title'),
-                                children: [
-                                  Text(
-                                    'Cadastre-se para continuar',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      textStyle: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                ],
-                              )
-                            : Column(
-                                key: const ValueKey('login_title'),
-                                children: [
-                                  Text(
-                                    'Entre com sua conta',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      textStyle: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                ],
-                              ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        isRegistering ? 'Usuário (novo)' : 'Usuário',
-                        style: GoogleFonts.poppins(
-                          textStyle: const TextStyle(color: Colors.black54),
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _usernameCtrl,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                        ),
-                        keyboardType: TextInputType.text,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Informe o usuário';
-                          }
-                          if (!RegExp(r'^[a-zA-Z0-9_.-]{3,}$')
-                              .hasMatch(value.trim())) {
-                            return 'Mín. 3 caracteres (letras/números)';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Senha',
-                        style: GoogleFonts.poppins(
-                          textStyle: const TextStyle(color: Colors.black54),
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _passwordCtrl,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                        ),
-                        obscureText: true,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor, digite sua senha.';
-                          }
-                          if (value.length < 6) {
-                            return 'A senha deve ter no mínimo 6 caracteres.';
-                          }
-                          return null;
-                        },
-                      ),
-                      AnimatedSize(
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeOutCubic,
-                        child: isRegistering
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  const SizedBox(height: 12),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Confirmar Senha',
-                                      style: GoogleFonts.poppins(
-                                        textStyle: const TextStyle(color: Colors.black54),
-                                      ),
-                                    ),
-                                  ),
-                                  TextFormField(
-                                    controller: _confirmCtrl,
-                                    decoration: const InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      contentPadding:
-                                          EdgeInsets.symmetric(horizontal: 10),
-                                    ),
-                                    obscureText: true,
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                                    validator: (value) {
-                                      if (!isRegistering) return null;
-                                      if (value == null || value.isEmpty) {
-                                        return 'Confirme a senha';
-                                      }
-                                      if (value != _passwordCtrl.text) {
-                                        return 'As senhas não coincidem';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: Text(
-                            'Esqueceu a senha?',
-                            style: GoogleFonts.poppins(
-                              textStyle: const TextStyle(color: Color(0xFF18A558)),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            key: ValueKey(isRegistering ? 'btn_reg' : 'btn_login'),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              _submit(isRegistering);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                              minimumSize: const Size.fromHeight(56),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              isRegistering ? 'Criar conta' : 'Acessar',
-                              style: GoogleFonts.poppins(
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => mode.value = !mode.value,
-                          child: RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.poppins(
-                                textStyle: const TextStyle(color: Colors.black54),
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: isRegistering
-                                      ? 'Já possui conta? '
-                                      : 'Não tem uma conta? ',
-                                ),
-                                TextSpan(
-                                  text: isRegistering ? 'Login' : 'Registre-se',
-                                  style: const TextStyle(
-                                    color: Color(0xFF18A558),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
+                  const SizedBox(height: 16),
+                  Text(
+                    'Entre com sua conta',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Usuário',
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(color: Colors.black54),
+                    ),
+                  ),
+                  TextFormField(
+                    controller: _usernameCtrl,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    keyboardType: TextInputType.text,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Informe o usuário';
+                      }
+                      if (!RegExp(r'^[a-zA-Z0-9_.-]{3,}$').hasMatch(value.trim())) {
+                        return 'Mín. 3 caracteres (letras/números)';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Senha',
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(color: Colors.black54),
+                    ),
+                  ),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    obscureText: true,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, digite sua senha.';
+                      }
+                      if (value.length < 6) {
+                        return 'A senha deve ter no mínimo 6 caracteres.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        'Esqueceu a senha?',
+                        style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(color: Color(0xFF18A558)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _submit(false);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen,
+                        minimumSize: const Size.fromHeight(56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Acessar',
+                        style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

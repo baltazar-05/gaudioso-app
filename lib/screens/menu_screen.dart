@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,15 +17,16 @@ import 'package:gaudioso_app/models/saida.dart';
 import 'package:gaudioso_app/models/cliente.dart';
 import 'package:gaudioso_app/models/fornecedor.dart';
 
-import 'cadastros_screen.dart';
+import 'entradas_screen.dart';
 import 'estoque_screen.dart';
-import 'forms/entrada_form_screen.dart';
-import 'forms/saida_form_screen.dart';
 import 'splash_screen.dart';
-import 'materiais_screen.dart';
 import 'profile/profile_screen.dart';
 import 'relatorios_screen.dart';
 import 'fluxo_lotes_screen.dart';
+import 'cadastros_inativos_screen.dart';
+import 'saidas_screen.dart';
+import 'user_control_screen.dart';
+import 'help_center_sheet.dart';
 
 // Core brand colors (one-time constants)
 const kText = Color(0xFF1F2937);
@@ -35,40 +39,67 @@ const kRed = Color(0xFFE53935);
 
 class MenuScreen extends StatefulWidget {
   final String username;
+  final String role;
   final int initialIndex;
-  const MenuScreen({super.key, required this.username, this.initialIndex = 0});
+  const MenuScreen({super.key, required this.username, required this.role, this.initialIndex = 0});
 
   @override
   State<MenuScreen> createState() => _MenuScreenState();
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  int _index = 0;
+  late int _index;
+  late final bool _isAdmin;
 
   @override
   void initState() {
     super.initState();
+    _isAdmin = widget.role.toLowerCase() == 'admin';
     _index = widget.initialIndex;
   }
 
   @override
   Widget build(BuildContext context) {
-    final pages = <Widget>[
-      _ResumoTab(username: widget.username),
-      const FluxoLotesScreen(),
-      const EstoqueScreen(),
-      RelatoriosScreen(username: widget.username, hideBottomBar: true),
-    ];
+    final pages = _isAdmin
+        ? <Widget>[
+            _ResumoTab(username: widget.username, isAdmin: true),
+            const FluxoLotesScreen(),
+            const EstoqueScreen(),
+            RelatoriosScreen(username: widget.username, role: widget.role, hideBottomBar: true),
+          ]
+        : <Widget>[
+            _ResumoTab(username: widget.username, isAdmin: false),
+            const EntradasScreen(),
+            const SaidasScreen(),
+          ];
+
+    final safeIndex = _clampIndex(_index, pages.length);
 
     return Scaffold(
       extendBody: true,
-      drawer: _SideOptionsDrawer(username: widget.username),
-      body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: _EcoBottomBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+      drawer: _SideOptionsDrawer(
+        username: widget.username,
+        role: widget.role,
+        onNavigateTab: (i) => setState(() => _index = i),
       ),
+      body: IndexedStack(index: safeIndex, children: pages),
+      bottomNavigationBar: _isAdmin
+          ? _EcoBottomBar(
+              currentIndex: safeIndex,
+              onTap: (i) => setState(() => _index = i),
+            )
+          : _RestrictedBottomBar(
+              currentIndex: safeIndex,
+              onTap: (i) => setState(() => _index = i),
+            ),
     );
+  }
+
+  int _clampIndex(int idx, int length) {
+    if (length <= 0) return 0;
+    if (idx < 0) return 0;
+    if (idx >= length) return length - 1;
+    return idx;
   }
 }
 
@@ -125,9 +156,72 @@ class _EcoBottomBar extends StatelessWidget {
   }
 }
 
+class _RestrictedBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  const _RestrictedBottomBar({required this.currentIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final inactive = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+    final active = Theme.of(context).colorScheme.primary;
+    final items = [
+      {'icon': Icons.home_outlined, 'label': 'Inicio'},
+      {'icon': Icons.download_rounded, 'label': 'Entradas'},
+      {'icon': Icons.upload_rounded, 'label': 'Saidas'},
+    ];
+    return BottomAppBar(
+      color: Colors.white,
+      elevation: 8,
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            for (var i = 0; i < items.length; i++)
+              _navItem(
+                icon: items[i]['icon'] as IconData,
+                label: items[i]['label'] as String,
+                index: i,
+                active: active,
+                inactive: inactive,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required Color active,
+    required Color inactive,
+  }) {
+    final selected = currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: selected ? active : inactive, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 11, color: selected ? active : inactive)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ResumoTab extends StatefulWidget {
   final String username;
-  const _ResumoTab({required this.username});
+  final bool isAdmin;
+  const _ResumoTab({required this.username, required this.isAdmin});
 
   @override
   State<_ResumoTab> createState() => _ResumoTabState();
@@ -179,33 +273,67 @@ class _ResumoTabState extends State<_ResumoTab> {
 
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
+  void _openHelpCenter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        child: HelpCenterSheet(username: widget.username, isAdmin: widget.isAdmin),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF81C784), Color(0xFF4CAF50)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.topLeft,
-                child: Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.black),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF81C784), Color(0xFF4CAF50)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.black),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
                   ),
-                ),
+                  ElevatedButton.icon(
+                    onPressed: _openHelpCenter,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                      elevation: 2,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.help_outline, size: 18),
+                    label: const Text('Ajuda'),
+                  ),
+                ],
               ),
+              const SizedBox(height: 6),
               // Texto fixo (substitui o antigo ticker)
               FutureBuilder<List<dynamic>>(
                 future: _headlineFuture,
@@ -386,39 +514,41 @@ class _ResumoTabState extends State<_ResumoTab> {
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: 4,
+                itemCount: widget.isAdmin ? 4 : 2,
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: () {
                     final w = MediaQuery.of(context).size.width;
-                    if (w <= 360) return 190.0; // telas bem pequenas
+                    if (w <= 360) return 190.0;
                     if (w <= 400) return 210.0;
-                    return 240.0; // padrÃƒÂ£o
+                    return 240.0;
                   }(),
                   crossAxisSpacing: 12.0,
                   mainAxisSpacing: 12.0,
                   childAspectRatio: () {
                     final w = MediaQuery.of(context).size.width;
-                    if (w <= 360) return 0.98; // cards um pouco mais altos
+                    if (w <= 360) return 0.98;
                     if (w <= 400) return 1.08;
                     return 1.18;
                   }(),
                 ),
                 itemBuilder: (context, i) {
                   final items = <Widget>[
-                    GaudiosoActionCard(
-                      icon: Icons.recycling,
-                      title: 'Cadastrar\nMateriais',
-                      subtitle: 'Novo item reciclavel',
-                      color: kAmber,
-                      onTap: () => Navigator.pushNamed(context, '/materiais'),
-                    ),
-                    GaudiosoActionCard(
-                      icon: Icons.handshake,
-                      title: 'Parceiros',
-                      subtitle: 'Clientes e fornecedores',
-                      color: kTeal,
-                      onTap: () => Navigator.pushNamed(context, '/parceiros'),
-                    ),
+                    if (widget.isAdmin)
+                      GaudiosoActionCard(
+                        icon: Icons.recycling,
+                        title: 'Cadastrar\nMateriais',
+                        subtitle: 'Novo item reciclavel',
+                        color: kAmber,
+                        onTap: () => Navigator.pushNamed(context, '/materiais'),
+                      ),
+                    if (widget.isAdmin)
+                      GaudiosoActionCard(
+                        icon: Icons.handshake,
+                        title: 'Parceiros',
+                        subtitle: 'Clientes e fornecedores',
+                        color: kTeal,
+                        onTap: () => Navigator.pushNamed(context, '/parceiros'),
+                      ),
                     GaudiosoActionCard(
                       icon: Icons.download_rounded,
                       title: 'Registrar Entrada',
@@ -428,8 +558,8 @@ class _ResumoTabState extends State<_ResumoTab> {
                     ),
                     GaudiosoActionCard(
                       icon: Icons.upload_rounded,
-                      title: 'Registrar Saída',
-                      subtitle: 'Registrar venda, saída do estoque',
+                      title: 'Registrar Saida',
+                      subtitle: 'Registrar venda, saida do estoque',
                       color: kRed,
                       onTap: () => Navigator.pushNamed(context, '/saida'),
                     ),
@@ -440,7 +570,10 @@ class _ResumoTabState extends State<_ResumoTab> {
             ],
           ),
         ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -489,102 +622,178 @@ class _OptionsMenu extends StatelessWidget {
   }
 }
 
-class _SideOptionsDrawer extends StatelessWidget {
+class _SideOptionsDrawer extends StatefulWidget {
   final String username;
-  const _SideOptionsDrawer({required this.username});
+  final String role;
+  final ValueChanged<int>? onNavigateTab;
+  const _SideOptionsDrawer({required this.username, required this.role, this.onNavigateTab});
+
+  @override
+  State<_SideOptionsDrawer> createState() => _SideOptionsDrawerState();
+}
+
+class _SideOptionsDrawerState extends State<_SideOptionsDrawer> {
+  late Future<File?> _avatarFuture;
+
+  bool get _isAdmin => widget.role.toLowerCase() == 'admin';
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarFuture = _loadAvatar();
+  }
+
+  String get _avatarFileName {
+    final safe = widget.username.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    return 'profile_avatar_$safe.png';
+  }
+
+  Future<File?> _loadAvatar() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/$_avatarFileName');
+    if (await file.exists()) return file;
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).scaffoldBackgroundColor;
     return Drawer(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF66BB6A), Color.fromARGB(255, 245, 245, 245)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.transparent),
+      backgroundColor: Colors.transparent,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xDD66BB6A), Color(0xCC4CAF50)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: SafeArea(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const CircleAvatar(radius: 24, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.black)),
-                  const SizedBox(height: 8),
-                  Text(username, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black)),
+                  DrawerHeader(
+                decoration: const BoxDecoration(color: Colors.transparent),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FutureBuilder<File?>(
+                      future: _avatarFuture,
+                      builder: (context, snap) {
+                        final file = snap.data;
+                        return CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          backgroundImage: file != null ? FileImage(file) : null,
+                          child: file == null ? const Icon(Icons.person, color: Colors.black) : null,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(widget.username, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Colors.black)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _isAdmin ? const Color(0xFF2E7D32) : const Color(0xFF00BFA6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _isAdmin ? 'Admin' : 'Funcionario',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_isAdmin)
+                    ListTile(
+                      leading: const Icon(Icons.security, color: Colors.black),
+                      title: const Text('Controle de Usuarios', style: TextStyle(color: Colors.black)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UserControlScreen()),
+                        );
+                      },
+                    ),
+                  if (_isAdmin)
+                    ListTile(
+                      leading: const Icon(Icons.archive_outlined, color: Colors.black),
+                      title: const Text('Cadastros inativados', style: TextStyle(color: Colors.black)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CadastrosInativosScreen()),
+                        );
+                      },
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.settings, color: Colors.black),
+                    title: const Text('Configuracoes', style: TextStyle(color: Colors.black)),
+                    subtitle: Text('Em breve', style: TextStyle(color: Colors.black54)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        builder: (ctx) => const SafeArea(
+                          child: ListTile(
+                            leading: Icon(Icons.settings),
+                            title: Text('Configuracoes (em breve)'),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.person_outline, color: Colors.black),
+                    title: const Text('Perfil', style: TextStyle(color: Colors.black)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ProfileScreen(username: widget.username, role: widget.role)),
+                      );
+                      if (res is int && widget.onNavigateTab != null) {
+                        widget.onNavigateTab!(res);
+                      }
+                      setState(() {
+                        _avatarFuture = _loadAvatar();
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  const Divider(height: 1, color: Colors.white24),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.redAccent),
+                    title: const Text('Sair', style: TextStyle(color: Colors.black)),
+                    onTap: () async {
+                      final navigator = Navigator.of(context);
+                      await AuthService().logout();
+                      navigator.pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const SplashScreen()),
+                        (route) => false,
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.black),
-              title: const Text('Configurações'),
-              subtitle: const Text('Em breve', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  builder: (ctx) => const SafeArea(
-                    child: ListTile(
-                      leading: Icon(Icons.settings),
-                      title: Text('Configurações (em breve)'),
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.dark_mode, color: Colors.black),
-              title: const Text('Modo escuro', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Modo escuro: em breve')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_outline, color: Colors.black),
-              title: const Text('Perfil', style: TextStyle(color: Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProfileScreen(username: username)),
-                );
-              },
-            ),
-            const Spacer(),
-            const Divider(height: 1, color: Colors.white24),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Sair', style: TextStyle(color: Colors.black)),
-              onTap: () async {
-                final navigator = Navigator.of(context);
-                await AuthService().logout();
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const SplashScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
 }
 
-// New stylized action card
 class GaudiosoActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -613,7 +822,6 @@ class GaudiosoActionCard extends StatelessWidget {
         onTap: onTap,
         child: Stack(
           children: [
-            // Top stripe
             Container(
               height: 8,
               decoration: BoxDecoration(
@@ -621,7 +829,6 @@ class GaudiosoActionCard extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
               ),
             ),
-            // Light background gradient
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -637,7 +844,6 @@ class GaudiosoActionCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Content (centered)
             Align(
               alignment: Alignment.center,
               child: Padding(
@@ -831,8 +1037,8 @@ class _MovimentarTab2State extends State<_MovimentarTab2> {
             ),
             child: ListTile(
               leading: CircleAvatar(backgroundColor: baseColor, child: Icon(icon, color: Colors.white, size: 18)),
-              title: Text('$mat Ã¢â‚¬Â¢ ${item.peso.toStringAsFixed(2)} kg', style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(isEntrada ? 'Entrada - $dateStr' : 'SaÃƒÂ­da - $dateStr'),
+              title: Text('$mat - ${item.peso.toStringAsFixed(2)} kg', style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(isEntrada ? 'Entrada - $dateStr' : 'Saida - $dateStr'),
             ),
           );
         },

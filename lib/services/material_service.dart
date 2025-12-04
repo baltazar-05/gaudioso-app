@@ -4,8 +4,9 @@ import '../models/material.dart';
 class MaterialService {
   static const _path = '/api/materiais';
 
-  Future<List<MaterialItem>> listar() async {
-    final body = await ApiService.getJson(_path);
+  Future<List<MaterialItem>> listar({bool? ativo = true}) async {
+    final query = ativo == null ? '' : '?ativo=${ativo ? 'true' : 'false'}';
+    final body = await ApiService.getJson('$_path$query');
 
     if (body is List) {
       return body.map((e) => MaterialItem.fromJson(e)).toList();
@@ -29,7 +30,11 @@ class MaterialService {
     await ApiService.putJson('$_path/${m.id}', m.toJson());
   }
 
-  Future<void> excluir(int id) async {
-    await ApiService.delete('$_path/$id');
+  Future<void> inativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": false});
+  }
+
+  Future<void> reativar(int id) async {
+    await ApiService.putJson('$_path/$id', {"ativo": true});
   }
 }

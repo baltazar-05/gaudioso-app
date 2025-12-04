@@ -8,10 +8,11 @@ import 'dart:typed_data';
 import 'package:gaudioso_app/core/api_config.dart';
 import 'package:gaudioso_app/services/auth/session_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   static final String baseUrl = ApiConfig.baseUrl;
-  static const Duration _timeout = Duration(seconds: 20);
+  static const Duration _timeout = Duration(seconds: 60);
   static final SessionStorage _session = SessionStorage();
 
   static Uri _uri(String path, [Map<String, String>? query]) {
@@ -84,6 +85,29 @@ class ApiService {
         .get(uri, headers: await _headers(includeJsonContentType: false, accept: accept))
         .timeout(_timeout);
     _check(resp, uri, expectedContentType: accept);
+    return resp.bodyBytes;
+  }
+
+  static Future<dynamic> uploadFile(String path, String filePath,
+      {String fieldName = 'file', MediaType? contentType}) async {
+    final uri = _uri(path);
+    final req = http.MultipartRequest('POST', uri);
+    req.headers.addAll(await _headers(includeJsonContentType: false));
+    req.files.add(await http.MultipartFile.fromPath(fieldName, filePath, contentType: contentType));
+    final resp = await req.send().timeout(_timeout);
+    final body = await resp.stream.bytesToString();
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception('HTTP ${resp.statusCode} @ ${uri.path}: $body');
+    }
+    return json.decode(body);
+  }
+
+  static Future<Uint8List> getBytesAbsolute(String url) async {
+    final headers = await _headers(includeJsonContentType: false);
+    final resp = await http.get(Uri.parse(url), headers: headers).timeout(_timeout);
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception('HTTP ${resp.statusCode} @ $url');
+    }
     return resp.bodyBytes;
   }
 

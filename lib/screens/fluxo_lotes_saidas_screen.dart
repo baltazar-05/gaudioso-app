@@ -34,6 +34,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
   final Map<String, bool> carregandoItens = {};
   Map<int, String> materialNomes = {};
   Map<int, String> clienteNomes = {};
+  int? materialFiltro;
 
   bool _isLocalLote(String n) => n.startsWith('local:');
   String _displayLote(String n) {
@@ -95,7 +96,8 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
         final bd = b.ultimoRegistro ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bd.compareTo(ad);
       });
-      setState(() => lotes = dados);
+      final filtrados = await _filtrarPorMaterial(dados);
+      setState(() => lotes = filtrados);
     } catch (e) {
       setState(() => erro = e.toString());
     } finally {
@@ -117,6 +119,37 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
     } finally {
       setState(() => carregandoItens[numeroLote] = false);
     }
+  }
+
+  Future<List<LoteSaidaResumo>> _filtrarPorMaterial(List<LoteSaidaResumo> base) async {
+    final idMat = materialFiltro;
+    if (idMat == null) return base;
+    final result = <LoteSaidaResumo>[];
+    final novoCache = <String, List<Saida>>{};
+    for (final l in base) {
+      try {
+        var itens = itensPorLote[l.numeroLote];
+        itens ??= await _service.itensDoLote(l.numeroLote);
+        if (itens.isNotEmpty) {
+          novoCache[l.numeroLote] = itens;
+          if (itens.any((s) => s.idMaterial == idMat)) {
+            result.add(l);
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao filtrar itens: $e')),
+          );
+        }
+      }
+    }
+    if (mounted && novoCache.isNotEmpty) {
+      setState(() {
+        itensPorLote.addAll(novoCache);
+      });
+    }
+    return result;
   }
 
 
@@ -175,7 +208,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
         content: Text('Tem certeza que deseja excluir o lote "$numeroLote"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remover')),
         ],
       ),
     );
@@ -221,7 +254,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
     final scheme = Theme.of(context).colorScheme;
     final bg = Theme.of(context).scaffoldBackgroundColor;
     final cardColor = scheme.surface;
-    final accent = scheme.onSurface;
+    const accent = Color.fromARGB(255, 0, 0, 0);
     final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     String fmtDate(DateTime? d) => d == null ? '--' : DateFormat('dd/MM/yyyy').format(d);
@@ -265,8 +298,43 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
                         side: const BorderSide(color: Colors.black54),
                         backgroundColor: Colors.green.shade50,
                       ),
-                      label: Text(fim == null ? 'Data fim (opcional)' : fmtDate(fim)),
+                      label: Text(fim == null ? 'Data fim (opcional)' : fmtDate(fim), style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
                     ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Filtrar por material', style: TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<int?>(
+                    value: materialFiltro,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.green.shade50,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('Todos os materiais'),
+                      ),
+                      ...materialNomes.entries
+                          .map((e) => DropdownMenuItem<int?>(
+                                value: e.key,
+                                child: Text(e.value),
+                              ))
+                          .toList()
+                        ..sort((a, b) => (a.child as Text).data!.toLowerCase().compareTo((b.child as Text).data!.toLowerCase())),
+                    ],
+                    onChanged: (v) {
+                      setState(() => materialFiltro = v);
+                      _carregar();
+                    },
                   ),
                 ],
               ),
@@ -277,8 +345,9 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: carregando ? null : _carregar,
-                  icon: const Icon(LucideIcons.search),
-                  label: const Text('Buscar'),
+                  style: ElevatedButton.styleFrom(foregroundColor: const Color.fromARGB(255, 0, 0, 0)),
+                  icon: const Icon(LucideIcons.search, color: Color.fromARGB(255, 0, 0, 0)),
+                  label: const Text('Buscar', style: TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
                 ),
               ),
             ),
@@ -318,7 +387,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
                                 collapsedIconColor: accent,
                                 leading: CircleAvatar(
                                   backgroundColor: const Color(0xFFE53935),
-                                  child: Icon(LucideIcons.arrowUp, color: Colors.white, size: 18),
+                                  child: Icon(LucideIcons.arrowUp, color: accent, size: 18),
                                 ),
                                 title: Text(
                                   _displayLote(l.numeroLote),
@@ -338,7 +407,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
                                     if (l.valorTotal != null)
                                       Text('Valor: ${currency.format(l.valorTotal)}',
                                           style: TextStyle(color: accent.withValues(alpha: 0.87))),
-                                    Text('SaÃ­da: $ultimo', style: TextStyle(color: accent.withValues(alpha: 0.87))),
+                                    Text('Saida: $ultimo', style: TextStyle(color: accent.withValues(alpha: 0.87))),
                                   ],
                                 ),
                                 trailing: Row(
@@ -361,12 +430,6 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
                                                 await _carregar();
                                               }
                                             },
-                                    ),
-                                    const SizedBox(width: 4),
-                                    IconButton(
-                                      tooltip: 'Excluir lote',
-                                      icon: const Icon(LucideIcons.trash2, color: Color(0xFFE53935)),
-                                      onPressed: _isLocalLote(l.numeroLote) ? null : () => _excluir(l.numeroLote),
                                     ),
                                   ],
                                 ),
@@ -411,9 +474,12 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 6),
         child: ListTile(
-          leading: CircleAvatar(backgroundColor: const Color(0xFFE53935), child: Icon(LucideIcons.recycle, color: Colors.white, size: 18)),
-          title: Text(mat),
-          subtitle: Text('Peso: ${s.peso.toStringAsFixed(2)} kg  â€¢  Unit: ${currency.format(s.precoUnitario)}  â€¢  Total: ${currency.format(valor)}'),
+          leading: CircleAvatar(backgroundColor: const Color(0xFFE53935), child: Icon(LucideIcons.recycle, color: const Color.fromARGB(255, 0, 0, 0), size: 18)),
+          title: Text(mat, style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
+          subtitle: Text(
+            'Peso: ${s.peso.toStringAsFixed(2)} kg  •  Unit: ${currency.format(s.precoUnitario)}  •  Total: ${currency.format(valor)}',
+            style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+          ),
           onTap: () async {
             final mudou = await Navigator.push(
               context,
@@ -424,7 +490,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
               await _carregar();
             }
           },
-          trailing: IconButton(icon: const Icon(LucideIcons.trash2), onPressed: () => _excluirItem(s, numeroLote)),
+          trailing: IconButton(icon: const Icon(LucideIcons.trash2, color: Colors.red), onPressed: () => _excluirItem(s, numeroLote)),
         ),
       );
     }).toList();
@@ -435,11 +501,11 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Excluir item'),
-        content: const Text('Deseja remover esta saÃ­da do lote?'),
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Deseja remover esta item do lote?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remover')),
         ],
       ),
     );
@@ -449,7 +515,7 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
       await _carregarItens(numeroLote);
       await _carregar();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item excluÃ­do')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item excluido')));
       }
     } catch (e) {
       if (!mounted) return;
@@ -523,24 +589,45 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
 
   Future<void> _excluirItem(Saida s) async {
     if (s.id == null) return;
+    bool salvando = false;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Excluir item'),
-        content: const Text('Deseja remover este item do lote?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Excluir')),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDlg) {
+          return AlertDialog(
+            title: const Text('Confirmar exclusão'),
+            content: const Text('Deseja remover este item do lote?'),
+            actions: [
+              TextButton(onPressed: salvando ? null : () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              FilledButton(
+                onPressed: salvando
+                    ? null
+                    : () async {
+                        setDlg(() => salvando = true);
+                        try {
+                          await _saidaService.excluir(s.id!);
+                          if (mounted) Navigator.pop(ctx, true);
+                        } catch (err) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
+                          }
+                          setDlg(() => salvando = false);
+                        }
+                      },
+                child: salvando
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Cancelar'),
+              ),
+            ],
+          );
+        });
+      },
     );
     if (ok != true) return;
-    try {
-      await _saidaService.excluir(s.id!);
-      setState(() { itens.removeWhere((e) => e.id == s.id); mudou = true; });
+    setState(() { itens.removeWhere((e) => e.id == s.id); mudou = true; });
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item excluido')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
     }
   }
 
@@ -556,6 +643,7 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
+        bool salvando = false;
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Padding(
@@ -583,7 +671,7 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
                 TextFormField(
                   controller: precoCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'PreÃ§o unitÃ¡rio'),
+                  decoration: const InputDecoration(labelText: 'Preço unitario'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -591,7 +679,73 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
                   children: [
                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
                     const SizedBox(width: 8),
-                    FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Salvar')),
+                    FilledButton(
+                      onPressed: salvando
+                          ? null
+                          : () async {
+                              final pesos = _parsePesos(pesoCtrl.text);
+                              final preco = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? s.precoUnitario;
+                              final pesosFinais = pesos.isNotEmpty
+                                  ? pesos
+                                  : (s.pesosJson.isNotEmpty ? List<double>.from(s.pesosJson) : <double>[s.peso]);
+                              final pesoTotal = pesosFinais.fold<double>(0, (sum, p) => sum + p);
+                              final confirmar = await showDialog<bool>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dCtx) {
+                                  bool loading = false;
+                                  return StatefulBuilder(builder: (dCtx, setDlg) {
+                                    return AlertDialog(
+                                      title: const Text('Confirmar alteracao'),
+                                      content: Text('Salvar item do lote com ${pesosFinais.length} pesagens e ${pesoTotal.toStringAsFixed(2)} kg?'),
+                                      actions: [
+                                        TextButton(onPressed: loading ? null : () => Navigator.pop(dCtx, false), child: const Text('Cancelar')),
+                                        FilledButton(
+                                          onPressed: loading
+                                              ? null
+                                              : () async {
+                                                  setDlg(() => loading = true);
+                                                  try {
+                                                    final atualizado = Saida(
+                                                      id: s.id,
+                                                      idMaterial: matSel?.id ?? s.idMaterial,
+                                                      idCliente: s.idCliente,
+                                                      numeroLote: s.numeroLote,
+                                                      pesosJson: pesosFinais,
+                                                      precoUnitario: preco,
+                                                      qtdPesagens: null,
+                                                      peso: pesoTotal,
+                                                      valorTotal: null,
+                                                      data: s.data,
+                                                      registradoPor: s.registradoPor,
+                                                    );
+                                                    await _saidaService.atualizar(atualizado);
+                                                    Navigator.pop(dCtx, true);
+                                                  } catch (err) {
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
+                                                    }
+                                                    setDlg(() => loading = false);
+                                                  }
+                                                },
+                                          child: loading
+                                              ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                              : const Text('Salvar'),
+                                        ),
+                                      ],
+                                    );
+                                  });
+                                },
+                              );
+                              if (confirmar == true) {
+                                salvando = true;
+                                Navigator.pop(ctx, true);
+                              }
+                            },
+                      child: salvando
+                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Salvar'),
+                    ),
                   ],
                 ),
               ],
@@ -601,35 +755,10 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
       },
     );
     if (ok != true) return;
-    final pesos = _parsePesos(pesoCtrl.text);
-    final preco = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? s.precoUnitario;
-    final pesosFinais = pesos.isNotEmpty
-        ? pesos
-        : (s.pesosJson.isNotEmpty ? List<double>.from(s.pesosJson) : <double>[s.peso]);
-    final pesoTotal = pesosFinais.fold<double>(0, (sum, p) => sum + p);
-    try {
-      final atualizado = Saida(
-        id: s.id,
-        idMaterial: matSel?.id ?? s.idMaterial,
-        idCliente: s.idCliente,
-        numeroLote: s.numeroLote,
-        pesosJson: pesosFinais,
-        precoUnitario: preco,
-        qtdPesagens: null,
-        peso: pesoTotal,
-        valorTotal: null,
-        data: s.data,
-        registradoPor: s.registradoPor,
-      );
-      await _saidaService.atualizar(atualizado);
-      await _load();
-      mudou = true;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item atualizado')));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+    await _load();
+    mudou = true;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item atualizado')));
     }
   }
 
@@ -685,7 +814,7 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
                 TextFormField(
                   controller: precoCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'PreÃ§o unitÃ¡rio'),
+                  decoration: const InputDecoration(labelText: 'Preço unitario'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -765,13 +894,16 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           child: ListTile(
-                            title: Text(mat.nome),
-                            subtitle: Text('Peso: ${s.peso.toStringAsFixed(2)} kg  â€¢  Unit: ${currency.format(s.precoUnitario)}  â€¢  Total: ${currency.format(valor)}'),
+                            title: Text(mat.nome, style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
+                            subtitle: Text(
+                              'Peso: ${s.peso.toStringAsFixed(2)} kg  •  Unit: ${currency.format(s.precoUnitario)}  •  Total: ${currency.format(valor)}',
+                              style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(icon: const Icon(LucideIcons.pencil), onPressed: () => _editarItem(s)),
-                                IconButton(icon: const Icon(LucideIcons.trash2), onPressed: () => _excluirItem(s)),
+                                IconButton(icon: const Icon(LucideIcons.pencil, color: Color.fromARGB(255, 0, 0, 0)), onPressed: () => _editarItem(s)),
+                                IconButton(icon: const Icon(LucideIcons.trash2, color: Colors.red), onPressed: () => _excluirItem(s)),
                               ],
                             ),
                           ),
