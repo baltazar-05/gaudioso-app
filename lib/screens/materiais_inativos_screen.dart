@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/material.dart';
 import '../services/material_service.dart';
 import 'material_form_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class MateriaisInativosScreen extends StatefulWidget {
   const MateriaisInativosScreen({super.key});
@@ -250,8 +251,9 @@ class _MateriaisInativosScreenState extends State<MateriaisInativosScreen> {
                     ),
                   ),
                 ],
-              ),
+            ),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 

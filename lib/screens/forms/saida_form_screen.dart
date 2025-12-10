@@ -155,14 +155,16 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDlg) {
           return AlertDialog(
-            title: Text(widget.saida != null ? 'Confirmar alteracao' : 'Confirmar cadastro'),
-            content: Text('Deseja ${widget.saida != null ? 'salvar as alteracoes' : 'cadastrar a saida'}?'),
+            title: Text(widget.saida != null ? 'Confirmar alteração' : 'Confirmar cadastro'),
+            content: Text('Deseja ${widget.saida != null ? 'salvar as alterações' : 'cadastrar a saida'}?'),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando ? null : () => Navigator.pop(ctx, false),
                 child: const Text('Cancelar'),
               ),
               FilledButton(
+                style: FilledButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando
                     ? null
                     : () async {
@@ -427,26 +429,25 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                             ],
                           ),
                         const SizedBox(height: 12),
-                        if (!editando)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _abrirEditorItem(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: actionColor,
-                                foregroundColor: _textColor,
-                                elevation: 1,
-                              ),
-                              icon: Icon(
-                                LucideIcons.plus,
-                                color: _textColor,
-                              ),
-                              label: Text(
-                                'Adicionar item',
-                                style: _poppins(color: _textColor),
-                              ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _abrirEditorItem(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: actionColor,
+                              foregroundColor: _textColor,
+                              elevation: 1,
+                            ),
+                            icon: Icon(
+                              LucideIcons.plus,
+                              color: _textColor,
+                            ),
+                            label: Text(
+                              'Adicionar item',
+                              style: _poppins(color: _textColor),
                             ),
                           ),
+                        ),
                         const SizedBox(height: 12),
                         _buildResumo(),
                         const SizedBox(height: 20),
@@ -650,33 +651,35 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
             final precoUnitario = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? 0;
             final valorTotal = precoUnitario * pesoTotal;
 
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Item da saída',
-                            style: Theme.of(context).textTheme.titleMedium,
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Item da saida',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
-                        ),
-                        _CircleIconButton(
-                          icon: LucideIcons.x,
-                          iconColor: _iconColor,
-                          tooltip: 'Fechar',
-                          onTap: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
+                          _CircleIconButton(
+                            icon: LucideIcons.x,
+                            iconColor: _iconColor,
+                            tooltip: 'Fechar',
+                            onTap: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -801,7 +804,8 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                   ],
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

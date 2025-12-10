@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/usuario.dart';
 import '../services/auth_service.dart';
 import '../services/usuario_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class UserControlScreen extends StatefulWidget {
   const UserControlScreen({super.key});
@@ -90,6 +91,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
         backgroundColor: const Color(0xFF00BFA6),
         child: const Icon(Icons.add, color: Colors.white),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 
@@ -139,9 +141,9 @@ class _UserControlScreenState extends State<UserControlScreen> {
                   ),
                 ],
               ),
-              child: Text(
+              child: const Text(
                 'Nenhum usuario ativo',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
             )
@@ -289,34 +291,38 @@ class _UserControlScreenState extends State<UserControlScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Alterar permissao de ${user.username}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 16),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'admin', label: Text('Admin')),
-                      ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
-                    ],
-                    selected: {selected},
-                    onSelectionChanged: (v) => setModal(() => selected = v.first),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        await _updateRole(user, selected);
-                      },
-                      child: const Text('Salvar'),
+            final bottom = MediaQuery.of(ctx).viewInsets.bottom;
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, (bottom > 0 ? bottom + 16 : 16)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Alterar permissao de ${user.username}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 16),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'admin', label: Text('Admin')),
+                        ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
+                      ],
+                      selected: {selected},
+                      onSelectionChanged: (v) => setModal(() => selected = v.first),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await _updateRole(user, selected);
+                        },
+                        child: const Text('Salvar'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -451,96 +457,99 @@ class _UserControlScreenState extends State<UserControlScreen> {
         return StatefulBuilder(
           builder: (ctx, setModal) {
             final bottom = MediaQuery.of(ctx).viewInsets.bottom;
-            return Padding(
-              padding: EdgeInsets.only(bottom: bottom),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text('Novo usuario', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: nomeCtrl,
-                      decoration: const InputDecoration(labelText: 'Nome'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: userCtrl,
-                      decoration: const InputDecoration(labelText: 'Username'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: senhaCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Senha'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: confirmaSenhaCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Repetir senha'),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('Permissao', style: TextStyle(fontWeight: FontWeight.w600)),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
-                        ButtonSegment(value: 'admin', label: Text('Admin')),
-                      ],
-                      selected: {role},
-                      onSelectionChanged: (v) => setModal(() => role = v.first),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: submitting
-                          ? null
-                          : () async {
-                              if (userCtrl.text.trim().toLowerCase() == 'admin') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Username admin é reservado')),
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottom > 0 ? bottom + 24 : 24),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Novo usuario', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: nomeCtrl,
+                        decoration: const InputDecoration(labelText: 'Nome'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: userCtrl,
+                        decoration: const InputDecoration(labelText: 'Username'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: senhaCtrl,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Senha'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: confirmaSenhaCtrl,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Repetir senha'),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('Permissao', style: TextStyle(fontWeight: FontWeight.w600)),
+                      SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
+                          ButtonSegment(value: 'admin', label: Text('Admin')),
+                        ],
+                        selected: {role},
+                        onSelectionChanged: (v) => setModal(() => role = v.first),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: submitting
+                            ? null
+                            : () async {
+                                if (userCtrl.text.trim().toLowerCase() == 'admin') {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Username admin Ǹ reservado')),
+                                  );
+                                  return;
+                                }
+                                final nome = nomeCtrl.text.trim();
+                                final user = userCtrl.text.trim();
+                                final senha = senhaCtrl.text;
+                                final confirmar = confirmaSenhaCtrl.text;
+                                if (user.isEmpty || senha.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Preencha usuario e senha')),
+                                  );
+                                  return;
+                                }
+                                if (confirmar.isEmpty || confirmar != senha) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Senhas nao conferem')),
+                                  );
+                                  return;
+                                }
+                                setModal(() => submitting = true);
+                                final created = await _showCreateConfirmDialog(
+                                  username: user,
+                                  nome: nome.isEmpty ? user : nome,
+                                  senha: senha,
+                                  role: role,
                                 );
-                                return;
-                              }
-                              final nome = nomeCtrl.text.trim();
-                              final user = userCtrl.text.trim();
-                              final senha = senhaCtrl.text;
-                              final confirmar = confirmaSenhaCtrl.text;
-                              if (user.isEmpty || senha.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Preencha usuario e senha')),
-                                );
-                                return;
-                              }
-                              if (confirmar.isEmpty || confirmar != senha) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Senhas nao conferem')),
-                                );
-                                return;
-                              }
-                              setModal(() => submitting = true);
-                              final created = await _showCreateConfirmDialog(
-                                username: user,
-                                nome: nome.isEmpty ? user : nome,
-                                senha: senha,
-                                role: role,
-                              );
-                              if (!mounted || !ctx.mounted) return;
-                              if (created) {
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Usuario $user criado')),
-                                );
-                                await _load();
-                              } else {
-                                setModal(() => submitting = false);
-                              }
-                            },
-                      icon: const Icon(Icons.check),
-                      label: Text(submitting ? 'Salvando...' : 'Criar usuario'),
-                    ),
-                  ],
+                                if (!mounted || !ctx.mounted) return;
+                                if (created) {
+                                  Navigator.pop(ctx);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Usuario $user criado')),
+                                  );
+                                  await _load();
+                                } else {
+                                  setModal(() => submitting = false);
+                                }
+                              },
+                        icon: const Icon(Icons.check),
+                        label: Text(submitting ? 'Salvando...' : 'Criar usuario'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

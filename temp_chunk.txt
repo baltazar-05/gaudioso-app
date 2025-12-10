@@ -1,0 +1,120 @@
+            iconColor: _deleteColor,
+            tooltip: 'Remover',
+            onTap: () {
+              setState(() => _itens.removeAt(index));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _abrirEditorItem({_EntradaItem? item, int? index}) async {
+    MaterialItem? materialSel = item?.material ?? (_materiais.isNotEmpty ? _materiais.first : null);
+    final pesosCtrl = TextEditingController(text: item?.pesos.map((p) => p.toStringAsFixed(2)).join(' + ') ?? '');
+    final precoCtrl = TextEditingController(text: (item?.precoUnitario ?? materialSel?.precoCompra ?? 0).toStringAsFixed(2));
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            final labelStyle = Theme.of(ctx).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
+            final pesos = _parsePesos(pesosCtrl.text);
+            final pesoTotal = pesos.fold<double>(0, (sum, p) => sum + p);
+            final bagCount = pesos.length;
+            final precoUnitario = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? 0;
+            final valorTotal = precoUnitario * pesoTotal;
+
+            return Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Item da entrada', style: Theme.of(context).textTheme.titleMedium),
+                        ),
+                        _CircleIconButton(
+                          icon: LucideIcons.x,
+                          iconColor: _textColor,
+                          tooltip: 'Fechar',
+                          onTap: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Material', style: labelStyle),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<MaterialItem>(
+                          initialValue: materialSel,
+                          decoration: const InputDecoration(
+                            hintText: 'Selecione um material',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          items: _materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
+                          onChanged: (value) {
+                            materialSel = value;
+                            if (materialSel != null) {
+                              precoCtrl.text = materialSel!.precoCompra.toStringAsFixed(2);
+                            }
+                            setModal(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Pesagens (ex: 23+52+45)', style: labelStyle),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: pesosCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Informe as pesagens separadas por +',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          onChanged: (_) => setModal(() {}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Preco unitario (R\$)', style: labelStyle),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: precoCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
+                            hintText: 'Informe o preco unitario',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          onChanged: (_) => setModal(() {}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Pesagens: $bagCount   |   Peso total: ${pesoTotal.toStringAsFixed(2)} kg'),
+                    Text('Valor total: R\$ ${valorTotal.toStringAsFixed(2)}'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+                      ),
+                      onPressed: () {
+                        final material = materialSel;

@@ -149,14 +149,16 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDlg) {
           return AlertDialog(
-            title: Text(widget.entrada != null ? 'Confirmar alteracao' : 'Confirmar cadastro'),
-            content: Text('Deseja ${widget.entrada != null ? 'salvar as alteracoes' : 'cadastrar a entrada'}?'),
+            title: Text(widget.entrada != null ? 'Confirmar alteração' : 'Confirmar cadastro'),
+            content: Text('Deseja ${widget.entrada != null ? 'salvar as alterações' : 'cadastrar a entrada'}?'),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando ? null : () => Navigator.pop(ctx, false),
                 child: const Text('Cancelar'),
               ),
               FilledButton(
+                style: FilledButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando
                     ? null
                     : () async {
@@ -507,25 +509,27 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
             final precoUnitario = double.tryParse(precoCtrl.text.replaceAll(',', '.')) ?? 0;
             final valorTotal = precoUnitario * pesoTotal;
 
-            return Padding(
-              padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + 16),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('Item da entrada', style: Theme.of(context).textTheme.titleMedium),
-                        ),
-                        _CircleIconButton(
-                          icon: LucideIcons.x,
-                          iconColor: _textColor,
-                          tooltip: 'Fechar',
-                          onTap: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text('Item da entrada', style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          _CircleIconButton(
+                            icon: LucideIcons.x,
+                            iconColor: _textColor,
+                            tooltip: 'Fechar',
+                            onTap: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,7 +629,8 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                   ],
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

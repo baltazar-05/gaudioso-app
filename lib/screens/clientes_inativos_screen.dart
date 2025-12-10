@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/cliente.dart';
 import '../services/cliente_service.dart';
 import 'cliente_form_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ClientesInativosScreen extends StatefulWidget {
   const ClientesInativosScreen({super.key});
@@ -233,8 +234,9 @@ class _ClientesInativosScreenState extends State<ClientesInativosScreen> {
                     ),
                   ),
                 ],
-              ),
+            ),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 
