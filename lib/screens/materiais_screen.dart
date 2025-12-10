@@ -210,14 +210,15 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
                                             return StatefulBuilder(
                                               builder: (ctx, setDlg) {
                                                 return AlertDialog(
-                                                  title: const Text('Excluir material'),
-                                                  content: Text('Deseja remover "${m.nome}"?'),
+                                                  title: const Text('Inativar material'),
+                                                  content: Text('Deseja inativar ${m.nome}?'),
                                                   actions: [
                                                     TextButton(
                                                       onPressed: salvando ? null : () => Navigator.pop(ctx, false),
-                                                      child: const Text('Cancelar'),
+                                                      child: const Text('Cancelar', style: TextStyle(color: Colors.black87)),
                                                     ),
                                                     FilledButton(
+                                                      style: FilledButton.styleFrom(foregroundColor: Colors.black87),
                                                       onPressed: salvando
                                                           ? null
                                                           : () async {

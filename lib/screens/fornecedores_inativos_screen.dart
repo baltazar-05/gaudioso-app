@@ -191,18 +191,19 @@ class _FornecedoresInativosScreenState extends State<FornecedoresInativosScreen>
                                                       actions: [
                                                         TextButton(onPressed: salvando ? null : () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
                                                         FilledButton(
-                                                          onPressed: salvando
-                                                              ? null
-                                                              : () async {
-                                                                  setDlg(() => salvando = true);
-                                                                  try {
-                                                                    await service.reativar(f.id!);
-                                                                    if (mounted) Navigator.pop(ctx, true);
-                                                                  } catch (e) {
-                                                                    if (mounted) {
-                                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao reativar: $e')));
-                                                                    }
-                                                                    setDlg(() => salvando = false);
+                                                      onPressed: salvando
+                                                          ? null
+                                                          : () async {
+                                                              setDlg(() => salvando = true);
+                                                              try {
+                                                                await service.reativar(f.id!);
+                                                                if (!ctx.mounted) return;
+                                                                Navigator.pop(ctx, true);
+                                                              } catch (e) {
+                                                                if (mounted) {
+                                                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao reativar: $e')));
+                                                                }
+                                                                setDlg(() => salvando = false);
                                                                   }
                                                                 },
                                                           child: salvando
@@ -217,6 +218,7 @@ class _FornecedoresInativosScreenState extends State<FornecedoresInativosScreen>
                                             );
                                             if (ok == true && mounted) {
                                               await carregar();
+                                              if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fornecedor reativado')));
                                             }
                                           },

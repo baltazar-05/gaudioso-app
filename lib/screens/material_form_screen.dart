@@ -73,16 +73,18 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
           builder: (ctx, setDlg) {
             final editando = widget.item != null;
             return AlertDialog(
-              title: Text(editando ? 'Confirmar alteracao' : 'Confirmar cadastro'),
+              title: Text(editando ? 'Confirmar alteração' : 'Confirmar cadastro'),
               content: Text(
-                'Deseja ${editando ? 'salvar as alteracoes' : 'cadastrar o novo material'}?',
+                'Deseja ${editando ? 'salvar as alterações' : 'cadastrar o novo material'}?',
               ),
               actions: [
                 TextButton(
+                  style: TextButton.styleFrom(foregroundColor: Colors.black),
                   onPressed: salvando ? null : () => Navigator.pop(ctx, false),
                   child: const Text('Cancelar'),
                 ),
                 FilledButton(
+                  style: FilledButton.styleFrom(foregroundColor: Colors.black),
                   onPressed: salvando
                       ? null
                       : () async {
@@ -245,7 +247,7 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
                       ),
                       icon: const Icon(LucideIcons.save, color: Color.fromARGB(255, 7, 7, 7)),
                       label: Text(
-                        editando ? 'Salvar alteracoes' : 'Cadastrar',
+                        editando ? 'Salvar alterações' : 'Cadastrar',
                         style: _poppins(
                           color: const Color.fromARGB(255, 2, 2, 2),
                           weight: FontWeight.w500,

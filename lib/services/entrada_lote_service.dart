@@ -117,11 +117,12 @@ class EntradaLoteService {
     final groups = <String, List<Entrada>>{};
     for (final e in entradas) {
       final d = _parseDateTime(e.data);
+      if (d == null) continue;
       if (!inRange(d)) continue;
       final numLote = (e.numeroLote ?? '').trim();
       final key = numLote.isNotEmpty
           ? numLote
-          : _buildLocalKey(parceiroId: e.idFornecedor, bucket: _bucketMinute(d!));
+          : _buildLocalKey(parceiroId: e.idFornecedor, bucket: _bucketMinute(d));
       groups.putIfAbsent(key, () => []).add(e);
     }
 

@@ -181,11 +181,11 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                               qtdPesagens: null,
                               peso: item.pesoTotal,
                               valorTotal: null,
-                              data: dataStr,
-                              registradoPor: registradoPor,
-                            );
-                            await _saidaService.atualizar(saidaAtualizada);
-                          } else {
+                          data: dataStr,
+                          registradoPor: registradoPor,
+                        );
+                        await _saidaService.atualizar(saidaAtualizada);
+                      } else {
                             for (final item in _itens) {
                               final nova = Saida(
                                 id: null,
@@ -200,10 +200,11 @@ class _SaidaFormScreenState extends State<SaidaFormScreen> {
                                 data: dataStr,
                                 registradoPor: registradoPor,
                               );
-                              await _saidaService.adicionar(nova);
-                            }
+                            await _saidaService.adicionar(nova);
                           }
-                          if (mounted) Navigator.pop(ctx, true);
+                        }
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx, true);
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

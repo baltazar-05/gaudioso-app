@@ -246,29 +246,32 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
                                                 builder: (ctx, setDlg) {
                                                   return AlertDialog(
                                                     title: const Text('Inativar fornecedor'),
-                                                    content: Text('Deseja inativar "${f.nome}"?'),
+                                                    content: Text('Deseja inativar ${f.nome}?'),
                                                     actions: [
                                                       TextButton(
+                                                        style: TextButton.styleFrom(foregroundColor: Colors.black),
                                                         onPressed: salvando ? null : () => Navigator.pop(ctx, false),
                                                         child: const Text('Cancelar'),
                                                       ),
                                                       FilledButton(
-                                                        onPressed: salvando
-                                                            ? null
-                                                            : () async {
-                                                                setDlg(() => salvando = true);
-                                                                try {
-                                                                  await service.inativar(f.id!);
-                                                                  if (mounted) Navigator.pop(ctx, true);
-                                                                } catch (e) {
-                                                                  if (mounted) {
-                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                      SnackBar(content: Text('Erro ao inativar: $e')),
-                                                                    );
-                                                                  }
-                                                                  setDlg(() => salvando = false);
-                                                                }
-                                                              },
+                                                  style: FilledButton.styleFrom(foregroundColor: Colors.black),
+                                                  onPressed: salvando
+                                                      ? null
+                                                      : () async {
+                                                          setDlg(() => salvando = true);
+                                                          try {
+                                                            await service.inativar(f.id!);
+                                                            if (!ctx.mounted) return;
+                                                            Navigator.pop(ctx, true);
+                                                          } catch (e) {
+                                                            if (mounted) {
+                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                SnackBar(content: Text('Erro ao inativar: $e')),
+                                                              );
+                                                            }
+                                                            setDlg(() => salvando = false);
+                                                          }
+                                                        },
                                                         child: salvando
                                                             ? const SizedBox(
                                                                 height: 18,
@@ -285,6 +288,7 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
                                           );
                                           if (ok == true && mounted) {
                                             await carregar();
+                                            if (!mounted) return;
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(content: Text('Fornecedor inativado')),
                                             );

@@ -25,7 +25,6 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
   static const _cardBackground = Color(0xFFF5F5F5);
   static const _highlightColor = Color(0xFF2E7D32);
   static const _textColor = Color(0xFF212121);
-  static const _iconColor = _textColor;
   static const _deleteColor = Color(0xFFE53935);
 
   TextStyle _poppins({
@@ -176,11 +175,11 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                               qtdPesagens: null,
                               peso: item.pesoTotal,
                               valorTotal: null,
-                              data: dataStr,
-                              registradoPor: registradoPor,
-                            );
-                            await _entradaService.atualizar(entradaAtualizada);
-                          } else {
+                          data: dataStr,
+                          registradoPor: registradoPor,
+                        );
+                        await _entradaService.atualizar(entradaAtualizada);
+                      } else {
                             for (final item in _itens) {
                               final nova = Entrada(
                                 id: null,
@@ -195,15 +194,16 @@ class _EntradaFormScreenState extends State<EntradaFormScreen> {
                                 data: dataStr,
                                 registradoPor: registradoPor,
                               );
-                              await _entradaService.adicionar(nova);
-                            }
-                          }
-                          if (mounted) Navigator.pop(ctx, true);
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(backgroundColor: _deleteColor, content: Text('Erro ao salvar: $e')),
-                            );
+                        await _entradaService.adicionar(nova);
+                      }
+                    }
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx, true);
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(backgroundColor: _deleteColor, content: Text('Erro ao salvar: $e')),
+                      );
                           }
                           setDlg(() => salvando = false);
                         }
