@@ -724,26 +724,6 @@ class _SideOptionsDrawerState extends State<_SideOptionsDrawer> {
                       },
                     ),
                   ListTile(
-                    leading: const Icon(Icons.settings, color: Colors.black),
-                    title: const Text('Configuracoes', style: TextStyle(color: Colors.black)),
-                    subtitle: Text('Em breve', style: TextStyle(color: Colors.black54)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                        ),
-                        builder: (ctx) => const SafeArea(
-                          child: ListTile(
-                            leading: Icon(Icons.settings),
-                            title: Text('Configuracoes (em breve)'),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.person_outline, color: Colors.black),
                     title: const Text('Perfil', style: TextStyle(color: Colors.black)),
                     onTap: () async {

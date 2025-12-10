@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -12,7 +11,7 @@ import '../models/material.dart';
 import '../services/cliente_service.dart';
 import '../services/material_service.dart';
 import '../services/relatorio_service.dart';
-import 'menu_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 const _topBarGradient = LinearGradient(
   colors: [Color(0xFF66BB6A), Color(0xFF2E7D32)],
@@ -94,74 +93,6 @@ class _RelatorioPanel extends StatelessWidget {
   }
 }
 
-class _RelatorioBottomBar extends StatelessWidget {
-  final int currentIndex;
-  final String username;
-  final String role;
-  const _RelatorioBottomBar({required this.currentIndex, required this.username, this.role = 'admin'});
-
-  void _go(BuildContext context, int index) {
-    if (index == currentIndex) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => MenuScreen(
-          username: username,
-          role: role,
-          initialIndex: _resolveMenuIndex(role, index),
-        ),
-      ),
-      (route) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final inactive = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
-    final active = Theme.of(context).colorScheme.primary;
-    Widget item(IconData icon, String label, int index) {
-      final selected = index == currentIndex;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _go(context, index),
-        child: SizedBox(
-          width: 80,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: selected ? active : inactive, size: 22),
-              const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 12, color: selected ? active : inactive)),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return BottomAppBar(
-      color: Colors.white,
-      child: SizedBox(
-        height: 64,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            item(Icons.home_outlined, 'Resumo', 0),
-            item(LucideIcons.arrowDownUp, 'Fluxo', 1),
-            item(LucideIcons.database, 'Estoque', 2),
-            item(LucideIcons.chartBar, 'Relatorios', 3),
-          ],
-        ),
-      ),
-    );
-  }
-
-  int _resolveMenuIndex(String role, int requested) {
-    if (role.toLowerCase() == 'admin') return requested;
-    if (requested < 0) return 0;
-    if (requested > 2) return 2;
-    return requested;
-  }
-}
-
 class RelatoriosScreen extends StatelessWidget {
   final String username;
   final String role;
@@ -193,7 +124,7 @@ class RelatoriosScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildRelatorioAppBar('Relatorios'),
-      bottomNavigationBar: hideBottomBar ? null : _RelatorioBottomBar(currentIndex: 3, username: username, role: role),
+      bottomNavigationBar: hideBottomBar ? null : AppBottomNav(currentIndex: 3, username: username, role: role),
       body: _relatorioBackground(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,16 +200,16 @@ class RelatoriosScreen extends StatelessWidget {
     Widget page;
     switch (tipo.id) {
       case 'lucro_real':
-        page = RelatorioLucroRealPage(username: username);
+        page = RelatorioLucroRealPage(username: username, role: role);
         break;
       case 'lucro_esperado':
-        page = RelatorioLucroEsperadoPage(username: username);
+        page = RelatorioLucroEsperadoPage(username: username, role: role);
         break;
       case 'movimentacao_30':
-        page = RelatorioMovimentacaoPage(username: username);
+        page = RelatorioMovimentacaoPage(username: username, role: role);
         break;
       default:
-        page = RelatorioPlaceholderPage(titulo: tipo.titulo, username: username);
+        page = RelatorioPlaceholderPage(titulo: tipo.titulo, username: username, role: role);
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
@@ -286,17 +217,19 @@ class RelatoriosScreen extends StatelessWidget {
 
 class RelatorioLucroRealPage extends StatelessWidget {
   final String username;
-  const RelatorioLucroRealPage({super.key, required this.username});
+  final String role;
+  const RelatorioLucroRealPage({super.key, required this.username, required this.role});
 
   @override
   Widget build(BuildContext context) {
-    return _RelatorioLucroRealForm(username: username);
+    return _RelatorioLucroRealForm(username: username, role: role);
   }
 }
 
 class _RelatorioLucroRealForm extends StatefulWidget {
   final String username;
-  const _RelatorioLucroRealForm({required this.username});
+  final String role;
+  const _RelatorioLucroRealForm({required this.username, required this.role});
 
   @override
   State<_RelatorioLucroRealForm> createState() => _RelatorioLucroRealFormState();
@@ -331,6 +264,7 @@ class _RelatorioLucroRealFormState extends State<_RelatorioLucroRealForm> {
     final service = RelatorioService();
     return _RelatorioBasePage(
       username: widget.username,
+      role: widget.role,
       title: 'Lucro Real',
       description: 'Selecione o periodo, filtros opcionais e gere o PDF de lucro real.',
       filePrefix: 'Relatorio_Lucro',
@@ -449,13 +383,15 @@ class _RelatorioLucroRealFormState extends State<_RelatorioLucroRealForm> {
 
 class RelatorioLucroEsperadoPage extends StatelessWidget {
   final String username;
-  const RelatorioLucroEsperadoPage({super.key, required this.username});
+  final String role;
+  const RelatorioLucroEsperadoPage({super.key, required this.username, required this.role});
 
   @override
   Widget build(BuildContext context) {
     final service = RelatorioService();
     return _RelatorioBasePage(
       username: username,
+      role: role,
       title: 'Lucro Esperado',
       description: 'Relatorio baseado no estoque atual. Nao requer selecao de datas.',
       filePrefix: 'Relatorio_Lucro_Esperado',
@@ -467,13 +403,15 @@ class RelatorioLucroEsperadoPage extends StatelessWidget {
 
 class RelatorioMovimentacaoPage extends StatelessWidget {
   final String username;
-  const RelatorioMovimentacaoPage({super.key, required this.username});
+  final String role;
+  const RelatorioMovimentacaoPage({super.key, required this.username, required this.role});
 
   @override
   Widget build(BuildContext context) {
     final service = RelatorioService();
     return _RelatorioBasePage(
       username: username,
+      role: role,
       title: 'Movimentacao',
       description: 'Selecione o periodo e gere o PDF consolidado de entradas e saidas (pesos e valores).',
       filePrefix: 'Relatorio_Movimentacao',
@@ -484,6 +422,7 @@ class RelatorioMovimentacaoPage extends StatelessWidget {
 
 class _RelatorioBasePage extends StatefulWidget {
   final String username;
+  final String role;
   final String title;
   final String description;
   final String filePrefix;
@@ -493,6 +432,7 @@ class _RelatorioBasePage extends StatefulWidget {
 
   const _RelatorioBasePage({
     required this.username,
+    required this.role,
     required this.title,
     required this.description,
     required this.filePrefix,
@@ -516,7 +456,7 @@ class _RelatorioBasePageState extends State<_RelatorioBasePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildRelatorioAppBar(widget.title),
-      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: widget.username),
+      bottomNavigationBar: AppBottomNav(currentIndex: 3, username: widget.username, role: widget.role),
       body: _relatorioBackground(
         child: _RelatorioPanel(
           child: Padding(
@@ -716,13 +656,14 @@ class _PresetButton extends StatelessWidget {
 class RelatorioPlaceholderPage extends StatelessWidget {
   final String titulo;
   final String username;
-  const RelatorioPlaceholderPage({super.key, required this.titulo, required this.username});
+  final String role;
+  const RelatorioPlaceholderPage({super.key, required this.titulo, required this.username, required this.role});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildRelatorioAppBar(titulo),
-      bottomNavigationBar: _RelatorioBottomBar(currentIndex: 3, username: username),
+      bottomNavigationBar: AppBottomNav(currentIndex: 3, username: username, role: role),
       body: _relatorioBackground(
         child: _RelatorioPanel(
           child: const Center(

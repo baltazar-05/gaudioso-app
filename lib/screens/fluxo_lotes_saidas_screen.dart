@@ -427,11 +427,19 @@ class _FluxoLotesSaidasScreenState extends State<FluxoLotesSaidasScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: const Text('Deseja remover esta item do lote?'),
+        title: const Text('Confirmar cancelamento'),
+        content: const Text('Deseja cancelar este item do lote?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remover')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.black),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Voltar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(foregroundColor: Colors.black),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cancelar item'),
+          ),
         ],
       ),
     );
@@ -522,29 +530,34 @@ class _EditarLoteSaidaScreenState extends State<_EditarLoteSaidaScreen> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDlg) {
           return AlertDialog(
-            title: const Text('Confirmar exclusão'),
-            content: const Text('Deseja remover este item do lote?'),
+            title: const Text('Confirmar cancelamento'),
+            content: const Text('Deseja cancelar este item do lote?'),
             actions: [
-              TextButton(onPressed: salvando ? null : () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.black),
+                onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                child: const Text('Voltar'),
+              ),
               FilledButton(
+                style: FilledButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando
                     ? null
                     : () async {
                         setDlg(() => salvando = true);
-                                                              try {
-                                                                await _saidaService.excluir(s.id!);
-                                                                if (!ctx.mounted) return;
-                                                                if (mounted) Navigator.pop(ctx, true);
-                                                              } catch (err) {
-                                                                if (mounted) {
-                                                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
-                                                                }
-                                                                setDlg(() => salvando = false);
-                                                              }
-                                                            },
+                        try {
+                          await _saidaService.excluir(s.id!);
+                          if (!ctx.mounted) return;
+                          if (mounted) Navigator.pop(ctx, true);
+                        } catch (err) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
+                          }
+                          setDlg(() => salvando = false);
+                        }
+                      },
                 child: salvando
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Cancelar'),
+                    : const Text('Cancelar item'),
               ),
             ],
           );

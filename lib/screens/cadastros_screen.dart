@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'fornecedores_screen.dart';
 import 'clientes_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class CadastrosScreen extends StatelessWidget {
   const CadastrosScreen({super.key});
@@ -163,6 +164,7 @@ class CadastrosScreen extends StatelessWidget {
         ],
       ),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 }

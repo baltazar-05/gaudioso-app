@@ -6,6 +6,7 @@ import '../models/cliente.dart';
 import '../services/cliente_service.dart';
 import '../utils/cpf_cnpj_input_formatter.dart';
 import '../utils/validators.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ClienteFormScreen extends StatefulWidget {
   final Cliente? cliente;
@@ -113,6 +114,7 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
     if (confirmou == true && mounted) Navigator.pop(context, true);
   }
 
+  
   @override
   Widget build(BuildContext context) {
     final editando = widget.cliente != null;
@@ -133,12 +135,10 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
         InputDecoration(
           filled: true,
           fillColor: colors.surface,
-          prefixIcon:
-              prefix != null ? Icon(prefix, color: colors.onSurface) : null,
+          prefixIcon: prefix != null ? Icon(prefix, color: colors.onSurface) : null,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: colors.onSurface.withValues(alpha: 0.54)),
+            borderSide: BorderSide(color: colors.onSurface.withValues(alpha: 0.54)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -207,105 +207,93 @@ class _ClienteFormScreenState extends State<ClienteFormScreen> {
           ),
         ),
         child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.all(16),
-              child: ListView(
-                children: [
-                  Hero(
-                    tag: 'cliente_${widget.cliente?.id ?? 'novo'}',
-                    child: CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.grey.shade200,
-                      child: Icon(
-                        LucideIcons.user,
-                        color: Colors.black87,
-        ),
-        ),
-      ),
-                  const SizedBox(height: 20),
-                  label('Nome'),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _nomeCtrl,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
-                    decoration: inputDecoration(
-                      prefix: LucideIcons.user,
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                padding: const EdgeInsets.all(16),
+                child: ListView(
+                  children: [
+                    Hero(
+                      tag: 'cliente_${widget.cliente?.id ?? 'novo'}',
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.grey.shade200,
+                        child: Icon(LucideIcons.user, color: Colors.black87),
+                      ),
                     ),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Digite o nome' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  label('CPF ou CNPJ'),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _docCtrl,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
-                    decoration: inputDecoration(
-                      prefix: LucideIcons.idCard,
+                    const SizedBox(height: 20),
+                    label('Nome'),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _nomeCtrl,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
+                      decoration: inputDecoration(prefix: LucideIcons.user),
+                      validator: (v) => v == null || v.trim().isEmpty ? 'Digite o nome' : null,
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [CpfCnpjInputFormatter()],
-                    validator: docCpfCnpjValidator,
-                  ),
-                  const SizedBox(height: 12),
-                  label('Telefone'),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _telCtrl,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
-                    decoration: inputDecoration(
-                      prefix: LucideIcons.phone,
+                    const SizedBox(height: 12),
+                    label('CPF ou CNPJ'),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _docCtrl,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
+                      decoration: inputDecoration(prefix: LucideIcons.idCard),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [CpfCnpjInputFormatter()],
+                      validator: docCpfCnpjValidator,
                     ),
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [telMask],
-                    validator: telefoneValidator,
-                  ),
-                  const SizedBox(height: 12),
-                  label('Endereco'),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _endCtrl,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
-                    decoration: inputDecoration(
-                      prefix: LucideIcons.mapPin,
+                    const SizedBox(height: 12),
+                    label('Telefone'),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _telCtrl,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
+                      decoration: inputDecoration(prefix: LucideIcons.phone),
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [telMask],
+                      validator: telefoneValidator,
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: _salvar,
-                    icon: Icon(LucideIcons.save, color: colors.onSurface),
-                    label: Text(
-                      editando ? 'Salvar alterações' : 'Cadastrar',
-                      style: buttonTextStyle.copyWith(color: Colors.black87),
+                    const SizedBox(height: 12),
+                    label('Endereco'),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _endCtrl,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: colors.onSurface, fontWeight: FontWeight.w400),
+                      decoration: inputDecoration(prefix: LucideIcons.mapPin),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: _salvar,
+                      icon: Icon(LucideIcons.save, color: colors.onSurface),
+                      label: Text(
+                        editando ? 'Salvar altera??es' : 'Cadastrar',
+                        style: buttonTextStyle.copyWith(color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    ));
+      bottomNavigationBar: const AppBottomNav(),
+    );
   }
 }

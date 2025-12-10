@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class HelpCenterSheet extends StatefulWidget {
   final String username;
@@ -143,34 +144,45 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final bgGradient = const LinearGradient(
+      colors: [Color(0xFF81C784), Color(0xFF66BB6A)],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    );
+    final bubbleUser = cs.primary;
+    final bubbleBot = Colors.white;
+    final borderRadius = BorderRadius.circular(14);
+
     return SafeArea(
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.82,
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                padding: const EdgeInsets.fromLTRB(16, 14, 10, 8),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.12),
+                        color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.smart_toy_outlined, size: 18),
+                          const Icon(Icons.help_outline, size: 18, color: Colors.black87),
                           const SizedBox(width: 8),
-                          Text(widget.isAdmin ? 'Assistente Admin' : 'Assistente', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(widget.isAdmin ? 'Ajuda (Admin)' : 'Ajuda', style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
                         ],
                       ),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close, color: Colors.black87),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: 'Fechar',
                     ),
@@ -178,28 +190,28 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Ajuda rapida',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: Colors.black87),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 14),
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 14,
-                        offset: const Offset(0, 8),
+                        blurRadius: 16,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -212,7 +224,7 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                           itemBuilder: (context, index) {
                             final msg = _messages[index];
                             final align = msg.fromUser ? Alignment.centerRight : Alignment.centerLeft;
-                            final bubbleColor = msg.fromUser ? cs.primary : cs.surface;
+                            final bubbleColor = msg.fromUser ? bubbleUser : bubbleBot;
                             final textColor = msg.fromUser ? Colors.white : cs.onSurface;
                             return Align(
                               alignment: align,
@@ -225,7 +237,8 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: bubbleColor,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: borderRadius,
+                                  border: msg.fromUser ? null : Border.all(color: Colors.black.withValues(alpha: 0.06)),
                                 ),
                                 child: Text(msg.text, style: TextStyle(color: textColor)),
                               ),
@@ -238,7 +251,7 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Sugestoes:',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: Colors.black87),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -250,7 +263,9 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                                   (p) => Padding(
                                     padding: const EdgeInsets.only(right: 8),
                                     child: ActionChip(
-                                      label: Text(p),
+                                      backgroundColor: cs.primary.withValues(alpha: 0.14),
+                                      side: BorderSide(color: cs.primary),
+                                      label: Text(p, style: TextStyle(color: cs.onSurface)),
                                       onPressed: () => _handleSend(p),
                                     ),
                                   ),
@@ -268,6 +283,8 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                               decoration: const InputDecoration(
                                 hintText: 'Digite sua duvida...',
                                 isDense: true,
+                                filled: true,
+                                border: OutlineInputBorder(),
                               ),
                               minLines: 1,
                               maxLines: 3,
@@ -279,8 +296,10 @@ class _HelpCenterSheetState extends State<HelpCenterSheet> {
                             onPressed: _handleSend,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              backgroundColor: cs.primary,
-                              foregroundColor: cs.onPrimary,
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black87,
+                              side: BorderSide(color: cs.primary),
+                              textStyle: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                             icon: const Icon(Icons.send, size: 18),
                             label: const Text('Enviar'),

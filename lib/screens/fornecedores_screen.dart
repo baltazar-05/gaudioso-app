@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/fornecedor.dart';
 import '../services/fornecedor_service.dart';
 import 'fornecedor_form_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class FornecedoresScreen extends StatefulWidget {
   const FornecedoresScreen({super.key});
@@ -313,6 +314,7 @@ class _FornecedoresScreenState extends State<FornecedoresScreen> {
             scheme.tertiary,
         child: Icon(LucideIcons.plus, color: iconColor),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 }

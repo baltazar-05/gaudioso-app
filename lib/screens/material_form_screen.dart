@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/material.dart';
 import '../services/material_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class MaterialFormScreen extends StatefulWidget {
   final MaterialItem? item;
@@ -261,6 +262,7 @@ class _MaterialFormScreenState extends State<MaterialFormScreen> {
         ),
       ),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 }

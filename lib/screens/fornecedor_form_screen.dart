@@ -6,6 +6,7 @@ import '../models/fornecedor.dart';
 import '../services/fornecedor_service.dart';
 import '../utils/cpf_cnpj_input_formatter.dart';
 import '../utils/validators.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class FornecedorFormScreen extends StatefulWidget {
   final Fornecedor? fornecedor;
@@ -273,7 +274,7 @@ class _FornecedorFormScreenState extends State<FornecedorFormScreen> {
         ),
       ),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 }
-

@@ -3,8 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/material.dart';
 import '../services/material_service.dart';
 import 'material_form_screen.dart';
-import 'package:gaudioso_app/screens/menu_screen.dart';
-import '../services/auth_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class MateriaisScreen extends StatefulWidget {
   const MateriaisScreen({super.key});
@@ -275,67 +274,10 @@ class _MateriaisScreenState extends State<MateriaisScreen> {
         foregroundColor: Colors.black87,
         child: const Icon(Icons.add, color: Colors.black87),
       ),
-      bottomNavigationBar: _shortcutBottomBar(context),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 
-  Widget _shortcutBottomBar(BuildContext context) {
-    final inactive = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
-    Future<void> go(int index) async {
-      final user = await AuthService().currentUser();
-      final display = (user?['nome'] ?? user?['username'] ?? '') as String;
-      final role = (user?['role'] ?? 'admin') as String;
-      if (!context.mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => MenuScreen(
-          username: display,
-          role: role,
-          initialIndex: _resolveMenuIndex(role, index),
-        )),
-        (route) => false,
-      );
-    }
-    Widget navItem({required IconData icon, required String label, required int index}) {
-      return GestureDetector(
-        onTap: () => go(index),
-        behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: 72,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: inactive, size: 22),
-              const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 11, color: inactive)),
-            ],
-          ),
-        ),
-      );
-    }
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 8,
-      child: SizedBox(
-        height: 64,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            navItem(icon: Icons.home_outlined, label: 'Resumo', index: 0),
-            navItem(icon: LucideIcons.arrowDownUp, label: 'Fluxo', index: 1),
-            navItem(icon: LucideIcons.database, label: 'Estoque', index: 2),
-            navItem(icon: LucideIcons.chartBar, label: 'Relatórios', index: 3),
-          ],
-        ),
-      ),
-    );
-  }
-
-  int _resolveMenuIndex(String role, int requested) {
-    if (role.toLowerCase() == 'admin') return requested;
-    if (requested < 0) return 0;
-    if (requested > 2) return 2;
-    return requested;
-  }
 }
 
 extension _Filtro on _MateriaisScreenState {

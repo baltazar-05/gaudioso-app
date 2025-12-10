@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/cliente.dart';
 import '../services/cliente_service.dart';
 import 'package:gaudioso_app/screens/cliente_form_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -321,6 +322,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
         backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? scheme.tertiary,
         child: Icon(LucideIcons.plus, color: Colors.black87),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 }

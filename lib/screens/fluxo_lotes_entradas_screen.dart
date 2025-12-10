@@ -407,14 +407,22 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
-        title: const Text('Excluir item'),
-        content: const Text('Deseja remover este item do lote?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cancelar')),
-        ],
-      ),
-    );
+                  title: const Text('Confirmar cancelamento'),
+                  content: const Text('Deseja cancelar este item do lote?'),
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.black),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Voltar'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(foregroundColor: Colors.black),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Cancelar item'),
+                    ),
+                  ],
+                ),
+              );
               if (ok == true) {
                 await _entradaService.excluir(e.id!);
                 await _carregarItens(numeroLote);
@@ -500,11 +508,16 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDlg) {
           return AlertDialog(
-            title: const Text('Excluir item'),
-            content: const Text('Deseja remover este item do lote?'),
+            title: const Text('Confirmar cancelamento'),
+            content: const Text('Deseja cancelar este item do lote?'),
             actions: [
-              TextButton(onPressed: salvando ? null : () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.black),
+                onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                child: const Text('Voltar'),
+              ),
               FilledButton(
+                style: FilledButton.styleFrom(foregroundColor: Colors.black),
                 onPressed: salvando
                     ? null
                     : () async {
@@ -523,7 +536,7 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                       },
                 child: salvando
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Cancelar'),
+                    : const Text('Cancelar item'),
               ),
             ],
           );
@@ -533,7 +546,7 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
     if (ok != true) return;
     setState(() { itens.removeWhere((x) => x.id == e.id); mudou = true; });
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item excluido')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item cancelado')));
     }
   }
 
@@ -583,9 +596,14 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.black),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Voltar'),
+                    ),
                     const SizedBox(width: 8),
                     FilledButton(
+                      style: FilledButton.styleFrom(foregroundColor: Colors.black),
                       onPressed: salvando
                           ? null
                           : () async {
@@ -600,11 +618,16 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                                   bool loading = false;
                                   return StatefulBuilder(builder: (dCtx, setDlg) {
                                     return AlertDialog(
-                                      title: const Text('Confirmar alteracao'),
+                                      title: const Text('Confirmar alteração'),
                                       content: Text('Salvar item do lote com ${pesosFinais.length} pesagens e ${pesoTotal.toStringAsFixed(2)} kg?'),
                                       actions: [
-                                        TextButton(onPressed: loading ? null : () => Navigator.pop(dCtx, false), child: const Text('Cancelar')),
+                                        TextButton(
+                                          style: TextButton.styleFrom(foregroundColor: Colors.black),
+                                          onPressed: loading ? null : () => Navigator.pop(dCtx, false),
+                                          child: const Text('Voltar'),
+                                        ),
                                         FilledButton(
+                                          style: FilledButton.styleFrom(foregroundColor: Colors.black),
                                           onPressed: loading
                                               ? null
                                               : () async {
