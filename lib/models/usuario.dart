@@ -3,12 +3,14 @@ class Usuario {
   final String nome;
   final String username;
   final String role;
+  final bool ativo;
 
   const Usuario({
     required this.id,
     required this.nome,
     required this.username,
     required this.role,
+    this.ativo = true,
   });
 
   bool get isAdmin => role.toLowerCase() == 'admin';
@@ -25,10 +27,20 @@ class Usuario {
     } else {
       throw const FormatException('Usuario sem ID valido');
     }
+    bool ativo = true;
+    final rawAtivo = json['ativo'];
+    if (rawAtivo is bool) {
+      ativo = rawAtivo;
+    } else if (rawAtivo is num) {
+      ativo = rawAtivo != 0;
+    } else if (rawAtivo is String) {
+      final v = rawAtivo.toLowerCase();
+      ativo = !(v == 'false' || v == '0' || v == 'inativo' || v == 'inactive' || v == 'nao');
+    }
     final username = (json['username'] ?? '') as String;
     final nome = (json['nome'] ?? username) as String;
     final role = ((json['role'] ?? 'funcionario') as String).toLowerCase();
-    return Usuario(id: id, nome: nome, username: username, role: role);
+    return Usuario(id: id, nome: nome, username: username, role: role, ativo: ativo);
   }
 }
 

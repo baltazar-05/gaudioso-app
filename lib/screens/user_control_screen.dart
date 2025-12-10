@@ -49,7 +49,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
       _error = null;
     });
     try {
-      final data = await _service.listar();
+      final data = await _service.listar(ativo: true);
       if (!mounted) return;
       setState(() {
         _resumo = data;
@@ -125,7 +125,28 @@ class _UserControlScreenState extends State<UserControlScreen> {
         children: [
           _buildResumoCard(data),
           const SizedBox(height: 12),
-          for (final u in data.usuarios) _buildUserCard(u),
+          if (data.usuarios.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                'Nenhum usuario ativo',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            for (final u in data.usuarios) _buildUserCard(u),
           const SizedBox(height: 12),
         ],
       ),
@@ -149,7 +170,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Total de Usuarios: ${resumo.total}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          Text('Usuarios ativos: ${resumo.total}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           Text('Admins: ${resumo.admins}', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
@@ -161,7 +182,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
 
   Widget _buildUserCard(Usuario u) {
     final isPrincipal = u.username.toLowerCase() == 'admin' || u.id == 1;
-    final canDelete = !isPrincipal && (_currentUserId == null ? true : _currentUserId != u.id);
+    final canAlterStatus = !isPrincipal && (_currentUserId == null ? true : _currentUserId != u.id);
     final avatarColor = u.isAdmin ? const Color(0xFF2E7D32) : const Color(0xFF00ACC1);
     final avatarIcon = u.isAdmin ? LucideIcons.shieldCheck : LucideIcons.userRound;
 
@@ -201,8 +222,8 @@ class _UserControlScreenState extends State<UserControlScreen> {
                     case 'edit':
                       _showRoleDialog(u);
                       break;
-                    case 'delete':
-                      _confirmDelete(u);
+                    case 'inactivate':
+                      _confirmInativar(u);
                       break;
                   }
                 },
@@ -218,13 +239,13 @@ class _UserControlScreenState extends State<UserControlScreen> {
                     ),
                   ),
                   PopupMenuItem(
-                    value: 'delete',
-                    enabled: canDelete,
+                    value: 'inactivate',
+                    enabled: canAlterStatus,
                     child: const Row(
                       children: [
-                        Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                        Icon(Icons.pause_circle_outline, color: Colors.redAccent, size: 18),
                         SizedBox(width: 8),
-                        Text('Deletar', style: TextStyle(color: Colors.redAccent)),
+                        Text('Inativar', style: TextStyle(color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -276,17 +297,13 @@ class _UserControlScreenState extends State<UserControlScreen> {
                 children: [
                   Text('Alterar permissao de ${user.username}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
-                  RadioListTile<String>(
-                    value: 'admin',
-                    groupValue: selected,
-                    title: const Text('Admin'),
-                    onChanged: (v) => setModal(() => selected = v ?? selected),
-                  ),
-                  RadioListTile<String>(
-                    value: 'funcionario',
-                    groupValue: selected,
-                    title: const Text('Funcionario'),
-                    onChanged: (v) => setModal(() => selected = v ?? selected),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'admin', label: Text('Admin')),
+                      ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
+                    ],
+                    selected: {selected},
+                    onSelectionChanged: (v) => setModal(() => selected = v.first),
                   ),
                   const SizedBox(height: 12),
                   Align(
@@ -324,33 +341,33 @@ class _UserControlScreenState extends State<UserControlScreen> {
     }
   }
 
-  Future<void> _confirmDelete(Usuario user) async {
+  Future<void> _confirmInativar(Usuario user) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remover usuario?'),
-        content: Text('Deseja remover ${user.username}?'),
+        title: const Text('Inativar usuario?'),
+        content: Text('Deseja inativar ${user.username}?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Deletar', style: TextStyle(color: Colors.redAccent)),
+            child: const Text('Inativar', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
     try {
-      await _service.deletar(user.id);
+      await _service.inativar(user.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Usuario ${user.username} removido')),
+        SnackBar(content: Text('Usuario ${user.username} inativado')),
       );
       await _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao deletar: $e')),
+        SnackBar(content: Text('Erro ao inativar: $e')),
       );
     }
   }
@@ -391,7 +408,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
                               setDialog(() => saving = true);
                               try {
                                 await _service.criar(username, senha, nome, role: role);
-                                if (!mounted) return;
+                                if (!mounted || !dialogCtx.mounted) return;
                                 Navigator.pop(dialogCtx, true);
                               } catch (e) {
                                 if (!mounted) return;
@@ -467,17 +484,13 @@ class _UserControlScreenState extends State<UserControlScreen> {
                     ),
                     const SizedBox(height: 12),
                     const Text('Permissao', style: TextStyle(fontWeight: FontWeight.w600)),
-                    RadioListTile<String>(
-                      value: 'funcionario',
-                      groupValue: role,
-                      title: const Text('Funcionario'),
-                      onChanged: (v) => setModal(() => role = v ?? role),
-                    ),
-                    RadioListTile<String>(
-                      value: 'admin',
-                      groupValue: role,
-                      title: const Text('Admin'),
-                      onChanged: (v) => setModal(() => role = v ?? role),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'funcionario', label: Text('Funcionario')),
+                        ButtonSegment(value: 'admin', label: Text('Admin')),
+                      ],
+                      selected: {role},
+                      onSelectionChanged: (v) => setModal(() => role = v.first),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
@@ -513,7 +526,7 @@ class _UserControlScreenState extends State<UserControlScreen> {
                                 senha: senha,
                                 role: role,
                               );
-                              if (!mounted) return;
+                              if (!mounted || !ctx.mounted) return;
                               if (created) {
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(

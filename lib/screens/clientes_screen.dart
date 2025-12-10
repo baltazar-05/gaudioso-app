@@ -258,18 +258,20 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                                   builder: (ctx, setDlg) {
                                                     return AlertDialog(
                                                       title: const Text('Inativar cliente'),
-                                                      content: Text('Deseja inativar "${c.nome}"?'),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: salvando ? null : () => Navigator.pop(ctx, false),
-                                                          child: const Text('Cancelar'),
-                                                        ),
-                                                        FilledButton(
-                                                          onPressed: salvando
-                                                              ? null
-                                                              : () async {
-                                                                  setDlg(() => salvando = true);
-                                                                  try {
+                                                    content: Text('Deseja inativar ${c.nome}?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        style: TextButton.styleFrom(foregroundColor: Colors.black),
+                                                        onPressed: salvando ? null : () => Navigator.pop(ctx, false),
+                                                        child: const Text('Cancelar'),
+                                                      ),
+                                                      FilledButton(
+                                                        style: FilledButton.styleFrom(foregroundColor: Colors.black),
+                                                        onPressed: salvando
+                                                            ? null
+                                                            : () async {
+                                                                setDlg(() => salvando = true);
+                                                                try {
                                                                     await service.inativar(c.id!);
                                                                     if (mounted) Navigator.pop(ctx, true);
                                                                   } catch (e) {

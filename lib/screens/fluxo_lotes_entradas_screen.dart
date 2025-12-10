@@ -147,79 +147,6 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
     return result;
   }
 
-  
-
-  Future<void> _renomear(String numeroAtual) async {
-    final ctrl = TextEditingController(text: numeroAtual);
-    final novo = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Renomear lote'),
-        content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'Novo numero do lote')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, ctrl.text.trim()), child: const Text('Salvar')),
-        ],
-      ),
-    );
-    if (novo == null || novo.isEmpty || novo == numeroAtual) return;
-    try {
-      await _service.renomear(numeroAtual, novo);
-      setState(() {
-        for (var i = 0; i < lotes.length; i++) {
-          if (lotes[i].numeroLote == numeroAtual) {
-            final l = lotes[i];
-            lotes[i] = LoteEntradaResumo(
-              numeroLote: novo,
-              qtd: l.qtd,
-              pesoTotal: l.pesoTotal,
-              valorTotal: l.valorTotal,
-              ultimoRegistro: l.ultimoRegistro,
-            );
-            break;
-          }
-        }
-        if (itensPorLote.containsKey(numeroAtual)) {
-          itensPorLote[novo] = itensPorLote.remove(numeroAtual)!;
-        }
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lote renomeado')));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
-    }
-  }
-
-  Future<void> _excluir(String numeroLote) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Excluir lote'),
-        content: Text('Tem certeza que deseja excluir o lote "$numeroLote"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cancelar')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await _service.excluir(numeroLote);
-      setState(() {
-        lotes.removeWhere((l) => l.numeroLote == numeroLote);
-        itensPorLote.remove(numeroLote);
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lote excluido')));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
-    }
-  }
-
   Future<void> _selecionarData(bool isInicio) async {
     final base = isInicio ? (inicio ?? DateTime.now()) : (fim ?? inicio ?? DateTime.now());
     final selecionada = await showDatePicker(
@@ -304,7 +231,7 @@ class _FluxoLotesEntradasScreenState extends State<FluxoLotesEntradasScreen> {
                   const Text('Filtrar por material', style: TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int?>(
-                    value: materialFiltro,
+                    initialValue: materialFiltro,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.green.shade50,
@@ -634,7 +561,7 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                 const Text('Editar item', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<mdl.MaterialItem>(
-                  value: matSel,
+                  initialValue: matSel,
                   items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
                   onChanged: (v) => matSel = v,
                   decoration: const InputDecoration(labelText: 'Material'),
@@ -693,15 +620,16 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                                                       qtdPesagens: null,
                                                       peso: pesoTotal,
                                                       valorTotal: null,
-                                                      data: e.data,
-                                                      registradoPor: e.registradoPor,
-                                                    );
-                                                    await _entradaService.atualizar(atualizado);
-                                                    Navigator.pop(dCtx, true);
-                                                  } catch (err) {
-                                                    if (mounted) {
-                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
-                                                    }
+                                                  data: e.data,
+                                                  registradoPor: e.registradoPor,
+                                                );
+                                                await _entradaService.atualizar(atualizado);
+                                                if (!dCtx.mounted) return;
+                                                Navigator.pop(dCtx, true);
+                                              } catch (err) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $err')));
+                                                }
                                                     setDlg(() => loading = false);
                                                   }
                                                 },
@@ -766,13 +694,13 @@ class _EditarLoteEntradaScreenState extends State<_EditarLoteEntradaScreen> {
                 const SizedBox(height: 12),
                 if (loteForn == null)
                   DropdownButtonFormField<Fornecedor>(
-                    value: fornSel,
+                    initialValue: fornSel,
                     items: fornecedores.map((f) => DropdownMenuItem(value: f, child: Text(f.nome))).toList(),
                     onChanged: (v) => fornSel = v,
                     decoration: const InputDecoration(labelText: 'Fornecedor'),
                   ),
                 DropdownButtonFormField<mdl.MaterialItem>(
-                  value: matSel,
+                  initialValue: matSel,
                   items: materiais.map((m) => DropdownMenuItem(value: m, child: Text(m.nome))).toList(),
                   onChanged: (v) {
                     matSel = v;

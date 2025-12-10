@@ -411,7 +411,7 @@ class _ResumoTabState extends State<_ResumoTab> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: scheme.onPrimary.withOpacity(0.18),
+                      color: scheme.onPrimary.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
@@ -593,7 +593,7 @@ class _ResumoTabState extends State<_ResumoTab> {
             duration: const Duration(milliseconds: 300),
             child: Text(
               title,
-              key: ValueKey<String>('title-'+title),
+              key: ValueKey<String>('title-$title'),
               style: TextStyle(color: on.withValues(alpha: 0.9), fontWeight: FontWeight.w600),
             ),
           ),
@@ -602,23 +602,13 @@ class _ResumoTabState extends State<_ResumoTab> {
             duration: const Duration(milliseconds: 300),
             child: Text(
               value,
-              key: ValueKey<String>('value-'+value),
+              key: ValueKey<String>('value-$value'),
               style: TextStyle(color: on, fontSize: 28, fontWeight: FontWeight.w700),
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class _OptionsMenu extends StatelessWidget {
-  final String username;
-  const _OptionsMenu({required this.username});
-  @override
-  Widget build(BuildContext context) {
-    // Deprecated: kept for reference but unused after drawer introduction
-    return const SizedBox.shrink();
   }
 }
 
@@ -802,12 +792,13 @@ class GaudiosoActionCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const GaudiosoActionCard({
+    Key? key,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.color,
     this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -816,7 +807,7 @@ class GaudiosoActionCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       clipBehavior: Clip.antiAlias,
-      shadowColor: Colors.black.withOpacity(0.08),
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       child: InkWell(
         borderRadius: BorderRadius.circular(26),
         onTap: onTap,
@@ -838,7 +829,7 @@ class GaudiosoActionCard extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       Colors.white,
-                      color.withOpacity(0.06),
+                      color.withValues(alpha: 0.06),
                     ],
                   ),
                 ),
@@ -867,7 +858,7 @@ class GaudiosoActionCard extends StatelessWidget {
                         softWrap: true,
                         style: TextStyle(
                           fontSize: 12,
-                          color: kText.withOpacity(0.55),
+                        color: kText.withValues(alpha: 0.55),
                           height: 1.2,
                         ),
                       ),

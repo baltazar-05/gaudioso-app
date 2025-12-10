@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'materiais_inativos_screen.dart';
 import 'clientes_inativos_screen.dart';
 import 'fornecedores_inativos_screen.dart';
+import 'usuarios_inativos_screen.dart';
 
 class CadastrosInativosScreen extends StatelessWidget {
   const CadastrosInativosScreen({super.key});
@@ -28,6 +29,12 @@ class CadastrosInativosScreen extends StatelessWidget {
         title: 'Fornecedores inativados',
         subtitle: 'Visualizar e reativar fornecedores',
         builder: (_) => const FornecedoresInativosScreen(),
+      ),
+      _InativoItem(
+        icon: LucideIcons.userX,
+        title: 'Usuarios inativados',
+        subtitle: 'Visualizar e reativar usuarios',
+        builder: (_) => const UsuariosInativosScreen(),
       ),
     ];
     final scheme = Theme.of(context).colorScheme;
