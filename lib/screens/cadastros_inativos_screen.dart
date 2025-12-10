@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'materiais_inativos_screen.dart';
 import 'clientes_inativos_screen.dart';
 import 'fornecedores_inativos_screen.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'usuarios_inativos_screen.dart';
 
 class CadastrosInativosScreen extends StatelessWidget {
@@ -91,6 +92,7 @@ class CadastrosInativosScreen extends StatelessWidget {
           },
         ),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 }

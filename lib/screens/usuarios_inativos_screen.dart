@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/usuario.dart';
 import '../services/usuario_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class UsuariosInativosScreen extends StatefulWidget {
   const UsuariosInativosScreen({super.key});
@@ -162,8 +163,9 @@ class _UsuariosInativosScreenState extends State<UsuariosInativosScreen> {
                     ),
                   ),
                 ],
-              ),
+            ),
       ),
+      bottomNavigationBar: const AppBottomNav(),
     );
   }
 
